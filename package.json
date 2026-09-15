@@ -1,0 +1,20 @@
+{
+  "name": "decoolewebsitevanelisa",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:photos": "node scripts/build-photos.mjs",
+    "build:audio": "node scripts/build-audio.mjs",
+    "build:video": "node scripts/build-video.mjs",
+    "demo": "node scripts/gen-demo.mjs",
+    "dev": "node scripts/serve.mjs",
+    "og": "node scripts/gen-og.mjs"
+  },
+  "devDependencies": {
+    "exif-reader": "^2.0.1",
+    "ffmpeg-static": "^5.2.0",
+    "ffprobe-static": "^3.1.0",
+    "sharp": "^0.33.5"
+  }
+}

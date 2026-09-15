@@ -1,0 +1,10 @@
+node_modules/
+.env
+# raw source material (big, private) - only the resized/converted output in media/ is committed
+content/photos/
+content/audio/
+content/video/
+content/excluded.txt
+media/.tmp/
+.DS_Store
+Thumbs.db

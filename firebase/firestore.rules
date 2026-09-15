@@ -1,0 +1,40 @@
+rules_version = '2';
+// Paste this in Firebase console -> Firestore Database -> Rules -> Publish.
+// Everyone may read and add; nobody may edit or delete (do that in the console). Field sizes are capped.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function str(f, max) {
+      return request.resource.data[f] is string
+        && request.resource.data[f].size() > 0
+        && request.resource.data[f].size() <= max;
+    }
+    function optStr(f, max) {
+      return !(f in request.resource.data) || (request.resource.data[f] is string && request.resource.data[f].size() <= max);
+    }
+    function stamped() { return request.resource.data.createdAt == request.time; }
+
+    match /guestbook/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['name', 'message', 'sticker', 'avatar', 'createdAt'])
+        && str('name', 40) && str('message', 600) && optStr('sticker', 30) && optStr('avatar', 8) && stamped();
+      allow update, delete: if false;
+    }
+    match /visitors/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['name', 'createdAt']) && str('name', 40) && stamped();
+      allow update, delete: if false;
+    }
+    match /votes/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['poll', 'option', 'createdAt']) && str('poll', 30) && str('option', 40) && stamped();
+      allow update, delete: if false;
+    }
+    match /likes/{photoId} {
+      allow read: if true;
+      // only ever +1
+      allow create: if request.resource.data.keys().hasOnly(['count']) && request.resource.data.count == 1;
+      allow update: if request.resource.data.keys().hasOnly(['count']) && request.resource.data.count == resource.data.count + 1;
+      allow delete: if false;
+    }
+  }
+}

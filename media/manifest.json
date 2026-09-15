@@ -1,0 +1,381 @@
+{
+ "albums": [
+  {
+   "slug": "de-kindjes",
+   "count": 8,
+   "cover": "img_1013.jpg",
+   "photos": [
+    {
+     "key": "img_1013",
+     "file": "img_1013.jpg",
+     "w": 1200,
+     "h": 900,
+     "tw": 480,
+     "th": 360,
+     "date": "2021-05-01"
+    },
+    {
+     "key": "img_1014",
+     "file": "img_1014.jpg",
+     "w": 1200,
+     "h": 900,
+     "tw": 480,
+     "th": 360,
+     "date": "2022-01-01"
+    },
+    {
+     "key": "img_1015",
+     "file": "img_1015.jpg",
+     "w": 900,
+     "h": 1200,
+     "tw": 360,
+     "th": 480,
+     "date": "2022-08-01"
+    },
+    {
+     "key": "img_1016",
+     "file": "img_1016.jpg",
+     "w": 1200,
+     "h": 900,
+     "tw": 480,
+     "th": 360,
+     "date": "2025-11-01"
+    },
+    {
+     "key": "img_1017",
+     "file": "img_1017.jpg",
+     "w": 1200,
+     "h": 900,
+     "tw": 480,
+     "th": 360,
+     "date": "2026-01-01"
+    },
+    {
+     "key": "img_1018",
+     "file": "img_1018.jpg",
+     "w": 900,
+     "h": 1200,
+     "tw": 360,
+     "th": 480,
+     "date": "2026-03-01"
+    },
+    {
+     "key": "img_1019",
+     "file": "img_1019.jpg",
+     "w": 1200,
+     "h": 900,
+     "tw": 480,
+     "th": 360,
+     "date": "2026-06-01"
+    },
+    {
+     "key": "img_1020",
+     "file": "img_1020.jpg",
+     "w": 1200,
+     "h": 900,
+     "tw": 480,
+     "th": 360,
+     "date": "2026-08-01"
+    }
+   ]
+  },
+  {
+   "slug": "random",
+   "count": 5,
+   "cover": "img_1021.jpg",
+   "photos": [
+    {
+     "key": "img_1021",
+     "file": "img_1021.jpg",
+     "w": 1200,
+     "h": 900,
+     "tw": 480,
+     "th": 360,
+     "date": "2019-02-02"
+    },
+    {
+     "key": "img_1023",
+     "file": "img_1023.jpg",
+     "w": 900,
+     "h": 1200,
+     "tw": 360,
+     "th": 480,
+     "date": "2020-03-03"
+    },
+    {
+     "key": "img_1024",
+     "file": "img_1024.jpg",
+     "w": 1200,
+     "h": 900,
+     "tw": 480,
+     "th": 360,
+     "date": null
+    },
+    {
+     "key": "img_1025",
+     "file": "img_1025.jpg",
+     "w": 1200,
+     "h": 900,
+     "tw": 480,
+     "th": 360,
+     "date": "2026-05-05"
+    },
+    {
+     "key": "img_1026",
+     "file": "img_1026.jpg",
+     "w": 900,
+     "h": 1200,
+     "tw": 360,
+     "th": 480,
+     "date": "2018-07-07"
+    }
+   ]
+  },
+  {
+   "slug": "toen-ik-klein-was",
+   "count": 7,
+   "cover": "img_1000.jpg",
+   "photos": [
+    {
+     "key": "img_1000",
+     "file": "img_1000.jpg",
+     "w": 1200,
+     "h": 900,
+     "tw": 480,
+     "th": 360,
+     "date": "1996-06-01"
+    },
+    {
+     "key": "img_1001",
+     "file": "img_1001.jpg",
+     "w": 1200,
+     "h": 900,
+     "tw": 480,
+     "th": 360,
+     "date": "1999-08-14"
+    },
+    {
+     "key": "img_1002",
+     "file": "img_1002.jpg",
+     "w": 900,
+     "h": 1200,
+     "tw": 360,
+     "th": 480,
+     "date": "2003-05-01"
+    },
+    {
+     "key": "img_1003",
+     "file": "img_1003.jpg",
+     "w": 1200,
+     "h": 900,
+     "tw": 480,
+     "th": 360,
+     "date": "2007-07-21"
+    },
+    {
+     "key": "img_1004",
+     "file": "img_1004.jpg",
+     "w": 1200,
+     "h": 900,
+     "tw": 480,
+     "th": 360,
+     "date": "2009-03-03"
+    },
+    {
+     "key": "img_1005",
+     "file": "img_1005.jpg",
+     "w": 900,
+     "h": 1200,
+     "tw": 360,
+     "th": 480,
+     "date": "2011-12-24"
+    },
+    {
+     "key": "img_1006",
+     "file": "img_1006.jpg",
+     "w": 1200,
+     "h": 900,
+     "tw": 480,
+     "th": 360,
+     "date": "2013-09-19"
+    }
+   ]
+  },
+  {
+   "slug": "trouwfeest",
+   "count": 6,
+   "cover": "img_1007.jpg",
+   "photos": [
+    {
+     "key": "img_1007",
+     "file": "img_1007.jpg",
+     "w": 1200,
+     "h": 900,
+     "tw": 480,
+     "th": 360,
+     "date": "2024-06-15"
+    },
+    {
+     "key": "img_1008",
+     "file": "img_1008.jpg",
+     "w": 1200,
+     "h": 900,
+     "tw": 480,
+     "th": 360,
+     "date": "2024-06-15"
+    },
+    {
+     "key": "img_1009",
+     "file": "img_1009.jpg",
+     "w": 900,
+     "h": 1200,
+     "tw": 360,
+     "th": 480,
+     "date": "2024-06-15"
+    },
+    {
+     "key": "img_1010",
+     "file": "img_1010.jpg",
+     "w": 1200,
+     "h": 900,
+     "tw": 480,
+     "th": 360,
+     "date": "2024-06-15"
+    },
+    {
+     "key": "img_1011",
+     "file": "img_1011.jpg",
+     "w": 1200,
+     "h": 900,
+     "tw": 480,
+     "th": 360,
+     "date": "2024-06-15"
+    },
+    {
+     "key": "img_1012",
+     "file": "img_1012.jpg",
+     "w": 900,
+     "h": 1200,
+     "tw": 360,
+     "th": 480,
+     "date": "2024-06-15"
+    }
+   ]
+  }
+ ],
+ "assets": {
+  "_blog/1995.jpg": {
+   "w": 1000,
+   "h": 700
+  },
+  "_blog/2008.jpg": {
+   "w": 1000,
+   "h": 700
+  },
+  "_blog/2026.jpg": {
+   "w": 1000,
+   "h": 700
+  },
+  "_prijzen/medaille-1.jpg": {
+   "w": 800,
+   "h": 800
+  },
+  "_prijzen/medaille-2.jpg": {
+   "w": 800,
+   "h": 800
+  },
+  "_prijzen/medaille-3.jpg": {
+   "w": 800,
+   "h": 800
+  },
+  "_site/avatar.jpg": {
+   "w": 600,
+   "h": 600
+  }
+ },
+ "builtAt": "2026-09-15T21:43:37.065Z",
+ "audio": {
+  "fanmail": [
+   {
+    "key": "de-kindjes",
+    "file": "fanmail/de-kindjes.mp3",
+    "duration": 9.952653
+   },
+   {
+    "key": "de-webmaster",
+    "file": "fanmail/de-webmaster.mp3",
+    "duration": 7.523265
+   },
+   {
+    "key": "oma",
+    "file": "fanmail/oma.mp3",
+    "duration": 10.083265
+   },
+   {
+    "key": "opa",
+    "file": "fanmail/opa.mp3",
+    "duration": 8.646531
+   },
+   {
+    "key": "tante-an",
+    "file": "fanmail/tante-an.mp3",
+    "duration": 7.601633
+   }
+  ],
+  "soundboard": [
+   {
+    "key": "allez-komaan",
+    "file": "soundboard/allez-komaan.mp3",
+    "duration": 1.985306
+   },
+   {
+    "key": "mama",
+    "file": "soundboard/mama.mp3",
+    "duration": 0.940408
+   },
+   {
+    "key": "schoenen-aan",
+    "file": "soundboard/schoenen-aan.mp3",
+    "duration": 1.227755
+   }
+  ],
+  "singles": {
+   "lied": {
+    "key": "lied",
+    "file": "lied.mp3",
+    "duration": 5.955918
+   },
+   "welkom": {
+    "key": "welkom",
+    "file": "welkom.mp3",
+    "duration": 2.795102
+   }
+  }
+ },
+ "videos": [
+  {
+   "key": "vlog-demo-1",
+   "file": "vlog-demo-1.mp4",
+   "poster": "posters/vlog-demo-1.jpg",
+   "w": 540,
+   "h": 960,
+   "duration": 6.014
+  },
+  {
+   "key": "vlog-demo-2",
+   "file": "vlog-demo-2.mp4",
+   "poster": "posters/vlog-demo-2.jpg",
+   "w": 960,
+   "h": 540,
+   "duration": 6.014
+  },
+  {
+   "key": "vlog-demo-3",
+   "file": "vlog-demo-3.mp4",
+   "poster": "posters/vlog-demo-3.jpg",
+   "w": 540,
+   "h": 960,
+   "duration": 6.014
+  }
+ ]
+}

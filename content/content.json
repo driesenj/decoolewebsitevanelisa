@@ -1,0 +1,202 @@
+{
+  "_help": "Alle tekst van de site. Placeholders: {name} {age} {city} {kid1} {kid2} {kid1age} {kid2age} {webmaster} {msnEmail}. Keys van foto's/audio/video = bestandsnaam in kleine letters zonder extensie (IMG_1234.HEIC -> img_1234). Regels met TODO moeten nog ingevuld worden, zie CONTENT-TODO.md.",
+
+  "site": {
+    "title": "De coole website van Elisa",
+    "name": "Elisa",
+    "displayName": "..:: ЄŁiSΔ ::.. ♥ (8) je suis à Paris (8)",
+    "personalMessage": "31 jaar en nog altijd de coolste. Ge kunt er niks aan doen.",
+    "birthday": "1995-09-19",
+    "city": "TODO-stad",
+    "location": "Parijs 🗼",
+    "msnEmail": "elisa_xxx@hotmail.com",
+    "msnPassword": "elisaiscool",
+    "webmaster": "Joep",
+    "fanclub": "De Officiële Elisa Fanclub",
+    "lastUpdated": "2026-09-18",
+    "visitorsStart": 1000001,
+    "avatar": "_site/avatar.jpg",
+    "ogDescription": "Klik hier om binnen te gaan!!! ~*~ officiële fanpagina ~*~ x-x-x"
+  },
+
+  "kids": [
+    { "name": "de grote", "age": "5" },
+    { "name": "de kleine", "age": "1,5" }
+  ],
+
+  "photoRules": {
+    "_help": "Foto's met een EXIF-datum in dit venster worden overgeslagen, behalve in albums met allowAllDates: true (trouwfeest). Overgeslagen foto's staan in content/excluded.txt.",
+    "bannedFrom": "2023-06-01",
+    "bannedTo": "2025-10-01"
+  },
+
+  "profile": {
+    "intro": "Hallo en welkom op de officiële fanpagina van {name}!!! Deze site werd met veel liefde (en te weinig slaap) gemaakt door haar grootste fans: {webmaster}, {kid1} en {kid2}. Alles wat je hier leest is 100% waar, behalve de dingen die niet waar zijn. Veel plezier en vergeet ons gastenboek niet!!! x-x-x",
+    "fields": [
+      ["Naam", "{name}"],
+      ["Leeftijd", "{age} jaar (voelt zich 17)"],
+      ["Woonplaats", "{city}"],
+      ["Momenteel in", "Parijs 🗼 (zonder ons 😢)"],
+      ["Relatie", "bezet ♥ (met de webmaster)"],
+      ["Kindjes", "2: {kid1} ({kid1age}) en {kid2} ({kid2age}), allebei fan"],
+      ["Sterrenbeeld", "Maagd (klopt volledig)"],
+      ["Lievelingseten", "TODO"],
+      ["Lievelingsdrank", "TODO"],
+      ["Guilty pleasure", "TODO"],
+      ["Motto", "TODO"],
+      ["MSN", "{msnEmail}"],
+      ["Fanclub opgericht", "TODO (jaar dat jullie elkaar leerden kennen)"]
+    ],
+    "loves": ["koffie ☕", "lang uitslapen (in theorie)", "Parijs 🗼", "haar kindjes (meestal)", "de webmaster (altijd)", "TODO"],
+    "hates": ["vroeg opstaan", "een lege koffiepot", "als de webmaster de afwas 'seffens' doet", "TODO"],
+    "stats": {
+      "title": "Elisa's stats volgens de kindjes",
+      "groups": [
+        { "by": "{kid1} ({kid1age} jaar)", "items": [
+          ["Knuffelen", 10], ["Koekjes bakken", 9], ["Zingen", 11], ["Dansen", 8], ["Verstoppertje", 6, "verstopt zich altijd op dezelfde plek"], ["Streng zijn", 3]
+        ] },
+        { "by": "{kid2} ({kid2age} jaar)", "items": [
+          ["Mama", 10], ["Mama", 10], ["Mama!", 10], ["MAMA!!!", 10]
+        ] }
+      ]
+    },
+    "friends": {
+      "title": "Top 8 vrienden",
+      "items": [
+        { "name": "{kid1}", "display": "~*~ {kid1} ~*~ ♥", "note": "fan nr. 1", "avatar": "🧒" },
+        { "name": "{kid2}", "display": "xX_{kid2}_Xx", "note": "fan nr. 1 (ex aequo)", "avatar": "👶" },
+        { "name": "{webmaster}", "display": "de webmaster (8) ik zie u graag (8)", "note": "voorzitter fanclub", "avatar": "🤓" },
+        { "name": "Oma", "display": "~*~ Oma ~*~", "note": "erelid", "avatar": "👵" },
+        { "name": "Opa", "display": "Opa (offline, maar in zijn hart online)", "note": "erelid", "avatar": "👴" },
+        { "name": "TODO", "display": "..:: TODO vriendin ::..", "note": "bff", "avatar": "💁‍♀️" },
+        { "name": "TODO", "display": "TODO", "note": "bff", "avatar": "💃" },
+        { "name": "TODO", "display": "TODO", "note": "bff", "avatar": "🐶" }
+      ]
+    },
+    "music": {
+      "title": "Mijn muziek (8)",
+      "nowPlaying": "lied",
+      "nowPlayingLabel": "Nu aan het spelen: het verjaardagslied (live opgenomen door de kindjes)",
+      "top": ["TODO top 5 van 2008 (bv. Milk Inc., Kate Ryan, Natalia, Rihanna, Timbaland)"]
+    },
+    "links": {
+      "title": "Mijn favoriete links",
+      "items": [
+        { "title": "Gastenboek!!!", "url": "#gastenboek", "desc": "schrijf iets liefs (of iets zots)" },
+        { "title": "Hoe geraak ik van Parijs terug naar huis", "url": "https://www.google.com/maps/dir/Paris/{city}", "desc": "voor het geval dat" },
+        { "title": "Croissant-calculator", "url": "#profiel", "desc": "1 croissant = 0 calorieën als je op reis bent (wetenschappelijk bewezen)" },
+        { "title": "Officiële fanclub-merchandise", "url": "#prijzen", "desc": "binnenkort (sinds 2019)" },
+        { "title": "TODO inside joke", "url": "#", "desc": "TODO" }
+      ]
+    }
+  },
+
+  "poll": {
+    "id": "cool",
+    "question": "Is Elisa cool?",
+    "options": ["Ja", "Zeker", "Absoluut", "Ja (maar dat wist ik al)"]
+  },
+
+  "timeline": {
+    "intro": "Het leven van {name}, zoals opgetekend door de fanclub. Historisch correct tot op het jaar (ongeveer).",
+    "items": [
+      { "year": 1995, "date": "1995-09-19", "title": "{name} wordt geboren", "text": "Op {birthdayLong} komt {name} ter wereld. Getuigen spreken van 'een schattig kind met veel karakter'. De wereld is nooit meer dezelfde geweest. Fun fact: in 1995 kwam ook Windows 95 uit. Toeval? Wij denken van niet.", "photo": "_blog/1995.jpg" },
+      { "key": "studeren", "year": null, "title": "Studeren", "text": "TODO: wat studeerde ze, waar, en één anekdote. Ik schrijf er iets plezants van." },
+      { "key": "blackfisk", "year": null, "title": "Blackfisk", "text": "TODO: vertel me in één zin wat 'blackfisk' was." },
+      { "year": 2008, "title": "{name} maakt een MSN-account", "text": "Displaynaam: {displayName}. Personal message: '(8) TODO liedjestekst (8)'. Het internet zal het nooit vergeten. Wij ook niet.", "photo": "_blog/2008.jpg" },
+      { "key": "nicaragua", "year": null, "title": "Nicaragua", "text": "TODO: wat deed ze in Nicaragua, wanneer, en wat ging er mis?" },
+      { "key": "afgestudeerd", "year": null, "title": "Afgestudeerd!", "text": "TODO: jaar + richting. Iedereen trots, vooral zijzelf." },
+      { "key": "joep-mansion", "year": null, "title": "{name} ontmoet de webmaster (The Mansion)", "text": "TODO: hoe/waar leerden jullie elkaar kennen en wat is 'the mansion'? Dit wordt het beste blogbericht, dus geef me details." },
+      { "key": "vinois", "year": null, "title": "Vinois", "text": "TODO: wat/waar is Vinois?" },
+      { "key": "huisje", "year": null, "title": "Een huisje", "text": "TODO: jaar + één zin over het huis (verbouwing?)." },
+      { "key": "luna", "year": null, "title": "Luna", "text": "TODO: wie/wat is Luna? (hond? kind?)" },
+      { "key": "flo", "year": null, "title": "Flo", "text": "TODO: wie is Flo? (de grote?)" },
+      { "key": "papa", "year": null, "title": "Papa", "text": "TODO: leg me even uit wat je hier bedoelt, dan schrijf ik het gepast." },
+      { "year": 2026, "date": "2026-09-19", "title": "Parijs 🗼", "text": "{name} viert haar {age}e verjaardag in Parijs. De fanclub blijft thuis en maakt een website. Wij zijn niet jaloers. Helemaal niet. Eet een croissant voor ons.", "photo": "_blog/2026.jpg" },
+      { "year": 2026, "date": "2026-09-19", "title": "Deze website gaat online", "text": "1.000.001 bezoekers op dag 1 (allemaal wij). Het gastenboek staat open, de fanmail stroomt binnen, en de webmaster heeft eindelijk geslapen." }
+    ]
+  },
+
+  "albums": {
+    "_help": "Sleutel = mapnaam in content/photos/. captions: key -> tekst. cover: key van de coverfoto. sort: 'date' om op EXIF-datum te sorteren. order: lijst van keys voor manuele volgorde.",
+    "toen-ik-klein-was": { "title": "toen ik klein was :p", "desc": "Bewijsmateriaal dat {name} ooit kleiner was dan {kid1}.", "sort": "date", "captions": { "img_1000": "TODO onderschrift" } },
+    "trouwfeest": { "title": "trouwfeest ♥♥♥", "desc": "De dag dat de webmaster de lotto won.", "allowAllDates": true },
+    "mijn-lief-en-ik": { "title": "mijn lief & ik ♥", "desc": "Hij is braaf, hij mag blijven." },
+    "de-kindjes": { "title": "de kindjes ♥", "desc": "De twee kleinste fans (en de luidste).", "sort": "date" },
+    "random": { "title": "random :p", "desc": "Foto's die nergens anders pasten maar te goed zijn om weg te laten." },
+    "parijs": { "title": "parijs 🗼", "desc": "Hier komen de foto's van Parijs. {name}, dit is een hint." }
+  },
+
+  "videos": {
+    "title": "Elisa's webcam",
+    "intro": "Lang voor TikTok had {name} al haar eigen vlogs. De fanclub heeft de archieven opengegooid. Kijken op eigen risico.",
+    "defaultTitle": "Vlog",
+    "defaultDesc": "Een echte {name}-vlog uit het archief. Kijkcijfers: 1.000.001.",
+    "items": {
+      "vlog-demo-1": { "title": "Vlog #1: TODO", "desc": "TODO" },
+      "vlog-demo-2": { "title": "Vlog #2: TODO" }
+    }
+  },
+
+  "fanmail": {
+    "title": "Fanmail",
+    "intro": "Spraakclips van fans over de hele wereld (vooral Vlaanderen). Klik op een contact om te luisteren.",
+    "defaultStatus": "online",
+    "contacts": {
+      "_help": "Sleutel = bestandsnaam van de spraakclip zonder extensie. status: online | away | busy | offline",
+      "oma": { "name": "Oma", "display": "~*~ Oma ~*~ (8) proficiat (8)", "pm": "ik heb dit zelf opgenomen", "status": "online", "avatar": "👵" },
+      "opa": { "name": "Opa", "display": "Opa", "pm": "waar is de knop", "status": "away", "avatar": "👴" },
+      "tante-an": { "name": "Tante An", "display": "..:: An ::.. ♥ bff 4 ever ♥", "pm": "TODO", "status": "online", "avatar": "💁‍♀️" },
+      "de-kindjes": { "name": "De kindjes", "display": "~*~ {kid1} & {kid2} ~*~ (L) mama (L)", "pm": "wanneer kom je terug", "status": "busy", "avatar": "🧒" },
+      "de-webmaster": { "name": "De webmaster", "display": "de webmaster (8) ik zie u graag (8)", "pm": "alles onder controle (bijna)", "status": "online", "avatar": "🤓" }
+    }
+  },
+
+  "soundboard": {
+    "title": "Mama zegt altijd...",
+    "intro": "Nagespeeld door {kid1} en {kid2}. Elke gelijkenis met bestaande personen berust op waarheid.",
+    "items": {
+      "allez-komaan": "Allez, komaan!",
+      "schoenen-aan": "Schoenen aan!!!",
+      "mama": "({kid2}) Mama!"
+    }
+  },
+
+  "guestbook": {
+    "title": "Gastenboek",
+    "intro": "Schrijf iets in het gastenboek van {name}! Lief, zot of allebei. {name} leest mee vanuit Parijs.",
+    "seed": [
+      { "name": "{webmaster}", "avatar": "🤓", "sticker": "eerste!!!", "message": "Eerste!!! Gelukkige verjaardag sgat. De kindjes slapen (bijna). Alles onder controle (bijna). Wij zien u graag. x-x-x", "date": "2026-09-19T00:01:00" },
+      { "name": "{kid1}", "avatar": "🧒", "sticker": "(L)", "message": "MAMA IK MIS JE. KOM JE MORGEN TERUG. IK HEB EEN TEKENING GEMAAKT. (getypt door papa, gedicteerd met veel volume)", "date": "2026-09-19T00:02:00" },
+      { "name": "{kid2}", "avatar": "👶", "sticker": "kusjes", "message": "mamamamamamamama (vertaling: proficiat)", "date": "2026-09-19T00:03:00" }
+    ]
+  },
+
+  "stickers": ["xoxo", "proficiat!!!", "(L)", "hottie", "bff 4 ever", "kusjes", "ik zie u graag", "sgat ♥", "eerste!!!", "x-x-x"],
+  "avatars": ["😊", "😎", "😍", "🥳", "👵", "👴", "🧒", "👶", "💁‍♀️", "💃", "🤓", "🐶", "🐱", "🦄", "🍾", "🥐"],
+
+  "awards": {
+    "title": "Prijzenkast",
+    "intro": "Officieel uitgereikte onderscheidingen. De jury (wij) is onomkoopbaar (behalve met koffie).",
+    "items": [
+      { "medal": "goud", "title": "Beste mama van het universum", "reason": "Unaniem verkozen. Er was geen tegenkandidaat.", "from": "{kid1} en {kid2}", "photo": "_prijzen/medaille-1.jpg" },
+      { "medal": "goud", "title": "Coolste vrouw van {city}", "reason": "De concurrentie was hard maar oneerlijk.", "from": "de fanclub", "photo": "_prijzen/medaille-2.jpg" },
+      { "medal": "zilver", "title": "Snelste 'ik ben er over 5 minuten'", "reason": "Zilver, want het waren er 20.", "from": "de webmaster" },
+      { "medal": "brons", "title": "Meest overtuigende 'ik heb geen honger'", "reason": "Gevolgd door het opeten van andermans frietjes. Elke keer.", "from": "de webmaster", "photo": "_prijzen/medaille-3.jpg" },
+      { "medal": "goud", "title": "Beste danspartner (keukeneditie)", "reason": "Vooral tijdens het koken. Vooral zonder muziek.", "from": "{kid1}" },
+      { "medal": "diploma", "title": "Officieel cool", "reason": "Diploma getekend en geïllustreerd door {kid1}, {kid1age} jaar.", "from": "{kid1}" },
+      { "medal": "goud", "title": "TODO award van vriend(in)", "reason": "TODO (uit de WhatsApp-oogst)", "from": "TODO" }
+    ]
+  },
+
+  "toasts": [
+    { "from": "{kid1}", "text": "mama is de liefste!!!" },
+    { "from": "{kid2}", "text": "mamamamamama" },
+    { "from": "de webmaster", "text": "we missen u sgat x" },
+    { "from": "Oma", "text": "proficiat kindje!" },
+    { "from": "Systeem", "text": "{name} heeft 1 nieuw compliment ontvangen." },
+    { "from": "{kid1}", "text": "wanneer kom je terug?" },
+    { "from": "Systeem", "text": "Je bent bezoeker nr. 1.000.001. Proficiat!" },
+    { "from": "de webmaster", "text": "TODO nog meer complimentjes" }
+  ]
+}
