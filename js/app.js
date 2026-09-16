@@ -1,15 +1,19 @@
-// De coole website van Elisa — main module. One page, hash-routed tabs (#profiel, #chat/oma, #fotos/album/3, #vlog).
-import { h, $, clear, store, session, fmtDate, relDate, fmtDuration, fmtNum, template, todo, pick, shuffle, hasMouse } from './util.js';
+// De coole website van Elisa — main module. Profile page with tabs (#profiel, #fotos/album/3, #vlog) and a
+// bottom-right dock with two minimised apps: Windows Live Messenger (modal window) and BonziBUDDY.
+import { h, $, clear, store, session, fmtDate, relDate, fmtDuration, fmtNum, template, todo, pick, shuffle, hasMouse, norm } from './util.js';
 import { sfx } from './sfx.js';
 import { player } from './player.js';
 import { db, initDb } from './db.js';
-import { showSignIn, toast, chatWindow, titleBar, nudge } from './msn.js';
+import { createMessenger, toast, xpTitle, nudge } from './msn.js';
+import { createDock } from './dock.js';
+import { createBonzi } from './bonzi.js';
 
-const TABS = [['profiel', 'Profiel'], ['chat', 'Chat'], ['fotos', "Foto's"], ['vlog', 'Vlog']];
+const TABS = [['profiel', 'Profiel'], ['fotos', "Foto's"], ['vlog', 'Vlog']];
 const MEDIA = 'media/';
 let C, M, site, vars;           // content, manifest, site block, template vars
 const live = { messages: [], visitors: [], likes: {}, votes: [] };
 let messagesLoaded = false;
+let dock, msn, bonzi, contacts = [];
 
 // ---- boot ---------------------------------------------------------------------------------------
 async function boot() {
@@ -17,7 +21,7 @@ async function boot() {
     fetch('content/content.json').then(r => r.json()),
     fetch(MEDIA + 'manifest.json').then(r => r.ok ? r.json() : {}).catch(() => ({})),
   ]);
-  M = { albums: [], assets: {}, audio: { fanmail: [], soundboard: [], singles: {} }, videos: [], ...manifest };
+  M = { albums: [], assets: {}, audio: { fanmail: [], singles: {} }, videos: [], videoFanmail: [], ...manifest };
   const s = content.site;
   vars = {
     name: s.name, age: new Date().getFullYear() - new Date(s.birthday).getFullYear(), city: s.city, webmaster: s.webmaster,
@@ -29,9 +33,11 @@ async function boot() {
   C = template(content, vars);
   site = C.site;
   document.title = site.title;
+  contacts = buildContacts();
 
   const dbReady = initDb();
   renderShell();
+  setupDesktop();
   window.addEventListener('hashchange', route);
   if (!location.hash) history.replaceState(null, '', '#profiel');
 
@@ -39,24 +45,76 @@ async function boot() {
   startLive();
   route();
 
-  // ?login in the URL forces the sign-in screen again (handy for testing)
-  if (new URLSearchParams(location.search).has('login')) session.set('signedIn', false);
-  if (session.get('signedIn')) afterSignIn(false);
-  else showSignIn(site, () => { session.set('signedIn', true); afterSignIn(true); });
-
   if (hasMouse) sparkles();
+  setTimeout(startToasts, 40000);
+  // first-visit nudges: Messenger flashes with the unread count, Bonzi shows up uninvited (as he did)
+  setTimeout(() => {
+    if (!msn.isOpen && msn.unread() > 0) {
+      dock.flash('msn', true);
+      toast({ from: null, avatar: '📨', text: h('span', null, h('b', null, `Je hebt ${msn.unread()} nieuwe berichten.`), h('br'), 'Klik hier om ze te lezen.'), onClick: () => openMsn(), ms: 10000 });
+    }
+  }, 4000);
+  if (!store.get('bonzi.dismissed') && !store.get('bonzi.seen')) setTimeout(() => { if (!msn.isOpen) { bonzi.show(true); store.set('bonzi.seen', true); } }, 20000);
 }
 
-function afterSignIn(fresh) {
-  const welkom = M.audio.singles?.welkom;
-  if (fresh) {
-    setTimeout(() => {
-      toast({ from: null, avatar: '💖', text: h('span', null, h('b', null, site.fanclub), ' heeft zich zojuist aangemeld.'), onClick: () => { location.hash = '#chat'; } });
-      if (welkom) player.play(MEDIA + 'audio/' + welkom.file);
-    }, 700);
-  }
-  setTimeout(startToasts, fresh ? 25000 : 12000);
-  if (visitorName() && /elisa/i.test(visitorName()) && !session.get('partyDone')) setTimeout(party, 1500);
+// ---- identity: who is typing? ------------------------------------------------------------------------
+const getUser = () => store.get('msn.user', '');
+const isElisa = (u) => !!u && [site.msnEmail, site.name, ...(site.aliases || [])].some(a => norm(a) === norm(u));
+const contactFor = (u) => u ? contacts.find(c => c.key === norm(u) || norm(c.name) === norm(u) || (c.aliases || []).some(a => norm(a) === norm(u))) : null;
+const displayNameFor = (u) => isElisa(u) ? site.name : (contactFor(u)?.name || String(u || '').trim());
+function setUser(v) {
+  const was = getUser();
+  store.set('msn.user', v);
+  document.querySelectorAll('.visitor-box').forEach(b => b.dispatchEvent(new Event('refresh')));
+  if (v && v !== was) db.addVisitor(displayNameFor(v)).catch(() => { });
+}
+function avatarFor(name) {
+  let x = 7; for (const ch of String(name || '').toLowerCase()) x = (x * 31 + ch.codePointAt(0)) >>> 0;
+  return C.avatars[x % C.avatars.length];
+}
+// one contact per fan with a voice and/or video message; order = order in content.json, extras after
+function buildContacts() {
+  const cfg = C.msn.contacts;
+  const keys = new Set([...M.audio.fanmail.map(a => a.key), ...M.videoFanmail.map(v => v.key)]);
+  const order = Object.keys(cfg).filter(k => !k.startsWith('_'));
+  return [...keys].sort((a, b) => { const ia = order.indexOf(a), ib = order.indexOf(b); return (ia < 0 ? 1e9 : ia) - (ib < 0 ? 1e9 : ib); }).map(key => {
+    const meta = cfg[key] || {};
+    const a = M.audio.fanmail.find(x => x.key === key), v = M.videoFanmail.find(x => x.key === key);
+    const name = meta.name || key.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    return {
+      key, name, display: meta.display || name, pm: meta.pm || '', status: meta.status || C.msn.defaultStatus || 'online', avatar: meta.avatar || '🙂',
+      aliases: meta.aliases || [], text: meta.text,
+      audio: a ? { src: MEDIA + 'audio/' + a.file, duration: a.duration } : null,
+      video: v ? { src: MEDIA + 'video/' + v.file, poster: MEDIA + 'video/' + v.poster, duration: v.duration, w: v.w, h: v.h } : null,
+    };
+  });
+}
+
+// ---- desktop: dock + messenger + bonzi -------------------------------------------------------------
+function setupDesktop() {
+  dock = createDock();
+  msn = createMessenger({
+    site, cfg: C.msn, contacts, emoticons: C.emoticons, avatarFor,
+    identity: { getUser, setUser, isElisa, contactFor, displayNameFor },
+    onSend: ({ name, message, room }) => db.addMessage({ name, message, room }),
+    onSignIn: (name) => {
+      const welkom = M.audio.singles?.welkom;
+      if (welkom && !store.get('welkom.done')) { store.set('welkom.done', true); setTimeout(() => player.play(MEDIA + 'audio/' + welkom.file), 300); }
+      if (isElisa(name) && !session.get('partyDone')) setTimeout(party, 600);
+      else toast({ from: null, avatar: '🦋', text: h('span', null, h('b', null, displayNameFor(name)), ' heeft zich zojuist aangemeld.') });
+    },
+    onOpenChange: (open, unread) => { dock.setActive('msn', open); dock.badge('msn', unread); if (open) dock.flash('msn', false); },
+  });
+  dock.add({ id: 'msn', icon: '🦋', label: 'Windows Live Messenger', short: 'Messenger', onClick: () => (msn.isOpen ? msn.close() : openMsn()) });
+  bonzi = createBonzi({ cfg: C.bonzi, onSing: () => { const song = M.audio.singles?.lied; if (song) player.play(MEDIA + 'audio/' + song.file); } });
+  bonzi.onChange = (shown) => dock.setActive('bonzi', shown);
+  dock.add({ id: 'bonzi', icon: '🦍', label: C.bonzi.name, short: 'Bonzi', onClick: () => { store.set('bonzi.seen', true); bonzi.toggle(); } });
+  // back button closes the Messenger window on phones
+  window.addEventListener('popstate', (e) => { if (!e.state?.msn && msn.isOpen) msn.close(); });
+}
+function openMsn(room) {
+  if (!msn.isOpen) history.pushState({ msn: 1 }, '', location.href);
+  msn.open(room);
 }
 
 // ---- shell: profile card + tabs -------------------------------------------------------------------
@@ -75,7 +133,7 @@ function renderShell() {
       h('p', { class: 'pm' }, site.personalMessage),
       h('p', { class: 'meta' }, h('span', { class: 'online' }), h('b', null, 'Online'), ` · Vrouw · ${vars.age} jaar · ${site.city} · Laatst online: `, h('b', null, 'nu, vanuit ', site.location)),
       h('div', { class: 'actions' },
-        h('a', { class: 'btn pink', href: '#chat' }, '💬 Stuur me een bericht'),
+        h('button', { class: 'btn pink', onclick: () => openMsn('group') }, '💬 Stuur me een bericht'),
         h('button', { class: 'btn', onclick: () => { sfx.pop(); toast({ from: 'Systeem', avatar: '🦋', text: `${site.name} is al je vriend(in). Al jaren. Dat weet je toch?` }); } }, '+ Voeg toe als vriend'))),
     h('div', { class: 'side-stats' },
       h('div', null, h('b', null, fmtNum(views)), h('br'), 'profielbezoeken'),
@@ -89,46 +147,20 @@ function renderShell() {
   updateCounts();
 }
 
-const messageCount = () => live.messages.length + C.chat.seed.length;
+const messageCount = () => live.messages.length + C.msn.seed.length;
 function updateCounts() {
-  const counts = {
-    fotos: M.albums.reduce((n, a) => n + a.count, 0) || null,
-    vlog: M.videos.length || null,
-    chat: (messageCount() + M.audio.fanmail.length) || null,
-  };
+  const counts = { fotos: M.albums.reduce((n, a) => n + a.count, 0) || null, vlog: M.videos.length || null };
   for (const [k, v] of Object.entries(counts)) { const el = $(`[data-count="${k}"]`); if (el) el.textContent = v ? `(${v})` : ''; }
   const mc = $('#msg-count'); if (mc) mc.textContent = fmtNum(messageCount());
 }
 
-// ---- visitor name ("wie bezocht mijn profiel" + chat name) -----------------------------------------
-const visitorName = () => store.get('visitor.name', '');
-function setVisitorName(v) {
-  store.set('visitor.name', v);
-  if (v) db.addVisitor(v).catch(() => { });
-  document.querySelectorAll('.visitor-box').forEach(b => b.dispatchEvent(new Event('refresh')));
-}
-function avatarFor(name) {
-  let x = 7; for (const ch of String(name || '').toLowerCase()) x = (x * 31 + ch.codePointAt(0)) >>> 0;
-  return C.avatars[x % C.avatars.length];
-}
 function visitorBox() {
   const box = h('div', { class: 'visitor-box' });
   const render = () => {
-    const name = visitorName();
-    if (name) {
-      clear(box).append(h('span', null, `👋 Hey ${name}! Je bezoek staat genoteerd.`),
-        h('a', { href: '#', class: 'small', onclick: (e) => { e.preventDefault(); setVisitorName(''); } }, 'ik ben iemand anders'));
-      return;
-    }
-    const inp = h('input', { type: 'text', placeholder: 'jouw naam', maxlength: 40 });
-    const go = () => {
-      const v = inp.value.trim(); if (!v) return inp.focus();
-      setVisitorName(v); sfx.pop();
-      if (/elisa/i.test(v)) party();
-      else toast({ from: 'Systeem', avatar: '🦋', text: `Welkom ${v}! ${site.name} ziet nu dat je langs geweest bent.` });
-    };
-    inp.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
-    clear(box).append(h('span', null, '👋 Laat weten dat je langs was:'), inp, h('button', { class: 'btn', onclick: go }, 'OK'));
+    const u = getUser();
+    clear(box).append(...(u
+      ? [h('span', null, `👋 Hey ${displayNameFor(u)}! Je bent aangemeld bij Messenger.`), h('button', { class: 'btn small', onclick: () => openMsn() }, 'Open Messenger')]
+      : [h('span', null, '👋 Laat weten dat je langs was: '), h('button', { class: 'btn', onclick: () => openMsn() }, '🦋 Aanmelden bij Messenger')]));
   };
   box.addEventListener('refresh', render);
   render();
@@ -139,7 +171,7 @@ function party() {
   session.set('partyDone', true);
   sfx.tada();
   confetti();
-  setTimeout(() => toast({ from: site.fanclub, avatar: '🎂', ms: 12000, text: `GELUKKIGE VERJAARDAG ${site.name.toUpperCase()}!!! (L)(L)(L) Dit is allemaal voor jou. Klik hier voor je berichten.`, onClick: () => { location.hash = '#chat'; } }), 300);
+  setTimeout(() => toast({ from: site.fanclub, avatar: '🎂', ms: 12000, text: `GELUKKIGE VERJAARDAG ${site.name.toUpperCase()}!!! (L)(L)(L) Dit is allemaal voor jou. Je berichten staan klaar in Messenger.` }), 300);
 }
 function confetti() {
   const colors = ['#ff3fa4', '#fff', '#ffd400', '#ff0080', '#7c4dff', '#00e0ff'];
@@ -150,24 +182,24 @@ function confetti() {
 }
 
 // ---- live data --------------------------------------------------------------------------------
-// seed messages (content.json) always open the conversation, live ones follow in time order
-function allMessagesAsc() {
-  const seeds = C.chat.seed.map((s, i) => ({ ...s, id: 'seed' + i, createdAt: new Date(s.date), seed: true }));
-  return [...seeds, ...[...live.messages].sort((a, b) => a.createdAt - b.createdAt)];
-}
+const seedMessages = () => C.msn.seed.map((s, i) => ({ ...s, id: 'seed' + i, room: 'group', createdAt: new Date(s.date), seed: true }));
 function startLive() {
   db.onMessages(list => {
+    const asc = [...list].sort((a, b) => a.createdAt - b.createdAt);
     const known = new Set(live.messages.map(m => m.id));
-    const fresh = messagesLoaded ? list.filter(m => !known.has(m.id) && !m.pending && m.name !== visitorName()) : [];
-    live.messages = list;
+    const me = displayNameFor(getUser());
+    const fresh = messagesLoaded ? asc.filter(m => !known.has(m.id) && !m.pending && displayNameFor(m.name) !== me) : [];
+    live.messages = asc;
     updateCounts();
-    const wasNear = chatWin?.nearEnd();
-    chatWin?.setMessages(allMessagesAsc());
+    msn.setMessages({ live: asc, seed: seedMessages() });
     if (fresh.length) {
-      const m = fresh[fresh.length - 1];
+      const m = fresh[fresh.length - 1], room = m.room || 'group';
       sfx.ding();
-      if (current.tab === 'chat' && wasNear) chatWin.scrollToEnd();
-      else toast({ from: m.name, avatar: avatarFor(m.name), text: m.message.slice(0, 120), onClick: () => { location.hash = '#chat'; setTimeout(() => chatWin?.scrollToEnd(), 400); } });
+      if (!(msn.isOpen && msn.room === room)) {
+        const where = room === 'group' ? '' : ` (privé met ${contacts.find(c => c.key === room)?.name || room})`;
+        toast({ from: displayNameFor(m.name) + where, avatar: avatarFor(m.name), text: m.message.slice(0, 120), onClick: () => openMsn(room) });
+        if (!msn.isOpen) dock.flash('msn', true);
+      }
     }
     messagesLoaded = true;
   });
@@ -180,6 +212,12 @@ function startLive() {
 const current = { tab: null, args: [] };
 function route() {
   const [tab = 'profiel', ...args] = location.hash.replace(/^#/, '').split('/').map(decodeURIComponent);
+  if (tab === 'msn' || tab === 'chat') {      // deep link: open Messenger over the current tab
+    history.replaceState(null, '', '#' + (current.tab || 'profiel'));
+    route();
+    openMsn(args[0] || undefined);
+    return;
+  }
   const known = TABS.some(([id]) => id === tab) ? tab : 'profiel';
   document.querySelectorAll('#tabs a').forEach(a => a.classList.toggle('active', a.dataset.tab === known));
   const sameTab = current.tab === known;
@@ -189,9 +227,8 @@ function route() {
   const scrollUp = () => { if (!sameTab && !first) window.scrollTo({ top: $('#tabs').offsetTop - 6, behavior: 'smooth' }); };
   if (known === 'fotos') { renderFotos(view, args, sameTab); scrollUp(); return; }
   closeLightbox(false);
-  if (known === 'chat' && sameTab && chatWin) { if (args[0]) chatWin.focusContact(args[0]); return; }
   clear(view);
-  ({ profiel: renderProfiel, chat: renderChat, vlog: renderVlog })[known](view, args);
+  ({ profiel: renderProfiel, vlog: renderVlog })[known](view, args);
   scrollUp();
 }
 const box = (title, body, { right, cls = '' } = {}) => h('div', { class: 'box ' + cls }, h('h3', null, title, right ? h('span', { class: 'r' }, right) : null), h('div', { class: 'body' }, body));
@@ -225,11 +262,11 @@ function renderVisitors() {
   const el = $('#visitors'); if (!el) return;
   const seen = new Set(), list = [];
   for (const v of live.visitors) { const k = v.name.trim().toLowerCase(); if (seen.has(k)) continue; seen.add(k); list.push(v); if (list.length >= 12) break; }
-  const me = visitorName();
+  const me = getUser();
   clear(el);
   if (!db.enabled) el.append(h('p', { class: 'muted small' }, 'Bezoekers worden pas bijgehouden zodra Firebase is ingesteld (zie README).'));
-  if (!list.length && me) list.push({ name: me, createdAt: new Date() });
-  if (!list.length) { el.append(h('p', { class: 'muted' }, 'Nog niemand. Wees de eerste: vul hierboven je naam in!')); return; }
+  if (!list.length && me) list.push({ name: displayNameFor(me), createdAt: new Date() });
+  if (!list.length) { el.append(h('p', { class: 'muted' }, 'Nog niemand. Meld je aan bij Messenger (rechtsonder) en je staat hier!')); return; }
   el.append(h('div', { class: 'visitors' }, list.map(v => h('span', { class: 'v' }, h('i', null, avatarFor(v.name)), v.name, h('small', null, ' ', relDate(v.createdAt).replace(' om', ','))))),
     h('p', { class: 'small muted', style: { margin: '6px 0 0' } }, `${fmtNum(live.visitors.length)} recente bezoeken · de webmaster (1.000.000 keer)`));
 }
@@ -262,28 +299,6 @@ function musicBox() {
     song ? h('button', { class: 'btn small', onclick: () => player.play(MEDIA + 'audio/' + song.file) }, '▶') : null);
   if (song) player.onChange((src, playing) => { if (!np.isConnected) return; const on = src === MEDIA + 'audio/' + song.file && playing; np.classList.toggle('paused', !on); np.querySelector('button').textContent = on ? '❚❚' : '▶'; });
   return box(mu.title, h('div', { class: 'music' }, np, h('ol', null, mu.top.map(t => h('li', null, todo(t))))));
-}
-
-// ---- chat -------------------------------------------------------------------------------------
-let chatWin = null;
-function renderChat(view, args) {
-  const F = C.chat;
-  const order = Object.keys(F.contacts).filter(k => !k.startsWith('_'));
-  const contacts = M.audio.fanmail.map(a => {
-    const meta = F.contacts[a.key] || {};
-    const name = meta.name || a.key.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    return { key: a.key, src: MEDIA + 'audio/' + a.file, duration: a.duration, name, display: meta.display || name, pm: meta.pm || '', status: meta.status || F.defaultStatus || 'online', avatar: meta.avatar || '🙂', text: meta.text };
-  }).sort((a, b) => { const ia = order.indexOf(a.key), ib = order.indexOf(b.key); return (ia < 0 ? 1e9 : ia) - (ib < 0 ? 1e9 : ib); });
-  chatWin = chatWindow({
-    site, chat: { ...F, emoticons: C.emoticons }, contacts, avatarFor,
-    getName: visitorName, setName: setVisitorName,
-    onSend: ({ name, message }) => db.addMessage({ name, message }),
-    onNavigate: (key) => { location.hash = key ? `#chat/${key}` : '#chat'; },
-  });
-  view.append(chatWin.el);
-  chatWin.setMessages(allMessagesAsc());
-  if (args[0]) setTimeout(() => chatWin.focusContact(args[0]), 50);
-  else if (!db.enabled || messagesLoaded) requestAnimationFrame(() => chatWin.scrollToEnd());
 }
 
 // ---- foto's -----------------------------------------------------------------------------------
@@ -365,7 +380,7 @@ function renderVlog(view) {
     const meta = V.items[v.key] || {};
     const video = h('video', { controls: true, playsinline: true, preload: 'none', poster: MEDIA + 'video/' + v.poster, src: MEDIA + 'video/' + v.file });
     video.addEventListener('play', () => { player.stop(); document.querySelectorAll('video').forEach(o => { if (o !== video) o.pause(); }); });
-    return h('div', { class: 'msn-win webcam' }, ...titleBar(`Webcam van ${site.name}`),
+    return h('div', { class: 'xp-win webcam' }, xpTitle(`Webcam van ${site.name}`, { icon: '🎥' }),
       h('div', { class: 'vbody' }, video),
       h('div', { class: 'vfoot' }, h('b', null, todo(meta.title || `${V.defaultTitle} #${i + 1}`)), h('small', null, todo(meta.desc || V.defaultDesc), ` · ${fmtDuration(v.duration)}`)));
   });
@@ -378,9 +393,9 @@ function startToasts() {
   const queue = shuffle(C.toasts.filter(t => !/TODO/.test(t.text)));
   let i = 0;
   const tick = () => {
-    if (document.hidden || !queue.length) return;
+    if (document.hidden || !queue.length || msn.isOpen) return;
     const t = queue[i++ % queue.length];
-    toast({ from: t.from, text: t.text, avatar: pick(['💌', '💖', '🎂', '😘', '🌟']), onClick: () => { location.hash = '#chat'; } });
+    toast({ from: t.from, text: t.text, avatar: pick(['💌', '💖', '🎂', '😘', '🌟']), onClick: () => openMsn() });
   };
   tick(); setInterval(tick, 75000);
 }

@@ -1,5 +1,5 @@
 // Firestore wrapper with an offline fallback. Everything the site does live goes through here:
-// guestbook entries, "wie bezocht mijn profiel", poll votes and photo hearts.
+// Messenger messages (group + private rooms), "wie bezocht mijn profiel", poll votes and photo hearts.
 import { firebaseConfig } from './firebase-config.js';
 import { store } from './util.js';
 
@@ -40,8 +40,10 @@ db.onMessages = (cb) => {
   const q = m.query(m.collection(fs, 'guestbook'), m.orderBy('createdAt', 'desc'), m.limit(300));
   return m.onSnapshot(q, snap => cb(snap.docs.map(docData)), err => { console.warn('messages', err); db.error = err; cb([]); });
 };
-db.addMessage = async ({ name, message }) => {
+db.addMessage = async ({ name, message, room = 'group' }) => {
+  // group messages carry no room field (works with the original rules too); private rooms need the updated rules
   const clean = { name: name.slice(0, 40), message: message.slice(0, 600) };
+  if (room && room !== 'group') clean.room = String(room).slice(0, 40);
   if (!db.enabled) {
     const list = store.get(LOCAL_GB, []);
     list.unshift({ ...clean, id: 'local-' + Date.now(), createdAt: new Date().toISOString() });

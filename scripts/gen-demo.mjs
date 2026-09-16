@@ -65,7 +65,6 @@ $s.Dispose()`;
   if (r.status !== 0) throw new Error(r.stderr || r.stdout);
 }
 await ensureDir(path.join(A, 'fanmail'));
-await ensureDir(path.join(A, 'soundboard'));
 const fanmail = {
   oma: 'Dag Elisa, hier is oma. Een dikke proficiat met je verjaardag. Geniet van Parijs en eet een croissant voor mij.',
   opa: 'Elisa, opa hier. Proficiat. Ik heb dit bericht drie keer moeten inspreken. Dag.',
@@ -76,9 +75,6 @@ const fanmail = {
 for (const [k, t] of Object.entries(fanmail)) await tts(path.join(A, 'fanmail', `${k}.wav`), t);
 await tts(path.join(A, 'welkom.wav'), 'Welkom op de coole website van mama!');
 await tts(path.join(A, 'lied.wav'), 'Lang zal ze leven, lang zal ze leven, lang zal ze leven in de gloria.');
-await tts(path.join(A, 'soundboard', 'allez-komaan.wav'), 'Allez, komaan!');
-await tts(path.join(A, 'soundboard', 'schoenen-aan.wav'), 'Schoenen aan!');
-await tts(path.join(A, 'soundboard', 'mama.wav'), 'Mama!');
 log('audio: ok');
 
 // ---- video (ffmpeg test pattern) ----------------------------------------------------------------
@@ -89,5 +85,15 @@ for (const [n, size] of [[1, '540x960'], [2, '960x540'], [3, '540x960']]) {
   const r = spawnSync(ffmpegPath, ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', `testsrc=duration=6:size=${size}:rate=25`, '-f', 'lavfi', '-i', 'sine=frequency=440:duration=6',
     '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-shortest', f], { encoding: 'utf8' });
   if (r.status !== 0) throw new Error(r.stderr);
+}
+// one video message from a fan (Tante An has both a voice and a video message)
+await ensureDir(path.join(V, 'fanmail'));
+{
+  const f = path.join(V, 'fanmail', 'tante-an.mp4');
+  if (!await exists(f)) {
+    const r = spawnSync(ffmpegPath, ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'smptebars=duration=5:size=540x960:rate=25', '-f', 'lavfi', '-i', 'sine=frequency=330:duration=5',
+      '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-shortest', f], { encoding: 'utf8' });
+    if (r.status !== 0) throw new Error(r.stderr);
+  }
 }
 log('video: ok');

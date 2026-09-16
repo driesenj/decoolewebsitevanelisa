@@ -12,31 +12,40 @@ content/content.json         ALLE tekst. Hier vul je in.  Zie CONTENT-TODO.md.
 content/photos/<album>/      bronfoto's (niet in git)       ->  npm run build  ->  media/photos/<album>/  (max 1600px, EXIF gestript)
 content/photos/_site/        avatar.jpg (mappen met _ zijn geen albums)
 content/audio/fanmail/       spraakberichten (WhatsApp .opus/.m4a ok)   ->  media/audio/fanmail/*.mp3  (genormaliseerd, stilte weggeknipt)
-content/audio/welkom.*       speelt na het aanmelden;  content/audio/lied.*  = het lied in de muziekbox
+content/audio/welkom.*       speelt één keer na het aanmelden bij Messenger;  content/audio/lied.*  = het lied (muziekbox + Bonzi)
+content/video/fanmail/       videoberichten van fans (zelfde sleutel als de spraakclip mag)
 content/video/               vlogs                                       ->  media/video/*.mp4 (past in 960x960, ~1 MB/min) + posters
 media/                       gebouwde output, WEL in git (dat is wat GitHub Pages serveert) + manifest.json
 scripts/                     build- en hulpscripts
-firebase/firestore.rules     beveiligingsregels voor de chat
+firebase/firestore.rules     beveiligingsregels voor Messenger
 ```
 
 **Sleutels**: overal waar content.json naar een bestand verwijst (captions, chat-contacten, videotitels) gebruik je de
 bestandsnaam in kleine letters zonder extensie: `IMG_1234.HEIC` -> `img_1234`, `Tante An.opus` -> `tante-an`.
 
-## Tabs
+## Wat er op staat
 
 - **Profiel** — Over mij, Ik hou van / Ik haat, stats volgens de kindjes, Wie bezocht mijn profiel (live), poll (live), muziek, links.
-- **Chat** — één MSN-groepsgesprek. De spraakclips uit `content/audio/fanmail/` staan bovenaan als berichten van de contacten
-  (deelnemerslijst links, op gsm achter de 👥-knop; klik op een naam = scroll + afspelen). Daaronder de getypte berichten:
-  `chat.seed` uit content.json, dan alles wat mensen live typen (Firebase). Nieuw bericht van iemand anders = MSN-ding + popup.
 - **Foto's** — albums, lightbox, hartjes (live).
-- **Vlog** — de vlogs in MSN-webcamvensters.
+- **Vlog** — de vlogs in XP-webcamvensters.
+- **Dock rechtsonder** (XP-taakbalk) met twee geminimaliseerde programma's:
+  - **Windows Live Messenger** — opent als XP-venster over de pagina. Eerst "aanmelden" met enkel een naam of e-mailadres
+    (geen wachtwoord). Links de gesprekken: het **groepsgesprek** (enkel getypte berichten, iedereen mag posten) en één
+    **privégesprek per fan** met een spraak-/videobericht (`content/audio/fanmail/`, `content/video/fanmail/`), waarin dat
+    bericht al gepost staat. In een privégesprek kan enkel die persoon zelf typen (aangemeld met de sleutel, de naam of een
+    alias uit `msn.contacts`) — of Elisa (aangemeld met `site.msnEmail`, "Elisa" of een alias uit `site.aliases`).
+    Dat is een client-side check, geen beveiliging. Nieuwe berichten: MSN-ding + popup vanuit de dock, teller op de knop,
+    knop knippert oranje. `#msn` of `#msn/oma` in de URL opent het venster meteen.
+  - **BonziBUDDY** — de echte paarse gorilla (originele frames, zie `scripts/bonzi-sprites.mjs`), praat in een ballon,
+    vertelt moppen/feitjes (`bonzi` in content.json), jongleert, "zingt" (speelt `lied.mp3`), en spreekt met de browserstem
+    (🔊/🔇 in de ballon). Verschijnt de eerste keer vanzelf na 20 s; "Weg" onthoudt dat hij niet welkom is.
 
 ## Dagelijks gebruik
 
 ```bash
 npm install          # eenmalig
 npm run build        # foto's / audio / video verwerken naar media/ (alleen wat nieuw is)
-npm run dev          # lokaal bekijken op http://localhost:5173   (…/?login toont het aanmeldscherm opnieuw)
+npm run dev          # lokaal bekijken op http://localhost:5173
 ```
 
 Dan `content.json` aanpassen, `git add -A && git commit && git push`. GitHub Pages is een minuutje later bijgewerkt.
@@ -54,10 +63,11 @@ iPhone-foto's in HEIC gaan via ImageMagick (`magick`) naar JPEG; die staat al op
 ## Firebase (live chat, bezoekers, poll, hartjes)
 
 Config staat in `js/firebase-config.js` (hou het `export`-woord als je ooit een nieuwe plakt). Regels: `firebase/firestore.rules`
-(Firestore -> Rules -> Publish). De `apiKey` mag publiek staan: de regels bepalen wat kan (lezen + toevoegen; niets wijzigen of wissen).
+(Firestore -> Rules -> alles vervangen -> Publish). **Na elke wijziging aan dat bestand opnieuw publiceren** — de versie met het
+`room`-veld is nodig voor de privégesprekken; zonder die zie je "Missing or insufficient permissions" bij het posten daar. De `apiKey` mag publiek staan: de regels bepalen wat kan (lezen + toevoegen; niets wijzigen of wissen).
 
 Berichten verwijderen: Firebase console -> Firestore Database -> collectie `guestbook` -> document -> prullenbak.
-(Ja, de collectie heet nog `guestbook`; de chat gebruikt ze.) Bezoekers staan in `visitors`, stemmen in `votes`, hartjes in `likes`.
+(Ja, de collectie heet nog `guestbook`; Messenger gebruikt ze. Veld `room` = sleutel van het privégesprek, geen veld = groepsgesprek.) Bezoekers staan in `visitors`, stemmen in `votes`, hartjes in `likes`.
 
 ## GitHub Pages
 
@@ -72,9 +82,8 @@ dan pas de link delen (of een `?v=2` achter de link zetten).
 
 ## Extra's die er in zitten
 
-- MSN-aanmeldscherm als "cold open"; de tik op *Aanmelden* ontgrendelt meteen audio, daarna speelt `welkom.mp3`.
-- Vul je naam in bij "Laat weten dat je langs was" (of in de chat) -> verschijnt bij *Wie bezocht mijn profiel*.
-  Vul je **Elisa** in -> confetti + verjaardagsmodus.
-- MSN-popups met complimentjes elke ±75 s (lijst `toasts` in content.json; regels met TODO worden overgeslagen); klik = naar de chat.
-- Buzzer in het chatvenster schudt het scherm. Sparkle-cursor enkel met muis.
+- Aanmelden als **Elisa** in Messenger: confetti, verjaardagspopup, en ze mag in elk gesprek antwoorden.
+- De eerste tik op *Aanmelden* ontgrendelt audio; daarna speelt `welkom.mp3` één keer.
+- MSN-popups met complimentjes af en toe (lijst `toasts`; regels met TODO worden overgeslagen); klik = Messenger openen.
+- Buzzer (⚡) schudt het venster. Sparkle-cursor enkel met muis. Terugknop op de gsm sluit het Messenger-venster.
 - Alle `TODO`'s uit content.json worden geel gemarkeerd op de site, zodat je niets vergeet.

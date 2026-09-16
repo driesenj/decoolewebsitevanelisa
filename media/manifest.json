@@ -269,7 +269,7 @@
    "h": 600
   }
  },
- "builtAt": "2026-09-16T07:20:58.703Z",
+ "builtAt": "2026-09-16T13:41:29.707Z",
  "audio": {
   "fanmail": [
    {
@@ -298,23 +298,7 @@
     "duration": 7.601633
    }
   ],
-  "soundboard": [
-   {
-    "key": "allez-komaan",
-    "file": "soundboard/allez-komaan.mp3",
-    "duration": 1.985306
-   },
-   {
-    "key": "mama",
-    "file": "soundboard/mama.mp3",
-    "duration": 0.940408
-   },
-   {
-    "key": "schoenen-aan",
-    "file": "soundboard/schoenen-aan.mp3",
-    "duration": 1.227755
-   }
-  ],
+  "soundboard": [],
   "singles": {
    "lied": {
     "key": "lied",
@@ -352,6 +336,16 @@
    "w": 540,
    "h": 960,
    "duration": 6.014
+  }
+ ],
+ "videoFanmail": [
+  {
+   "key": "tante-an",
+   "file": "fanmail/tante-an.mp4",
+   "poster": "fanmail/posters/tante-an.jpg",
+   "w": 540,
+   "h": 960,
+   "duration": 5.016
   }
  ]
 }

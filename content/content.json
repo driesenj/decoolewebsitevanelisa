@@ -1,6 +1,5 @@
 {
   "_help": "Alle tekst van de site. Placeholders: {name} {age} {city} {kid1} {kid2} {kid1age} {kid2age} {webmaster} {msnEmail}. Keys van foto's/audio/video = bestandsnaam in kleine letters zonder extensie (IMG_1234.HEIC -> img_1234). Regels met TODO moeten nog ingevuld worden, zie CONTENT-TODO.md.",
-
   "site": {
     "title": "De coole website van Elisa",
     "name": "Elisa",
@@ -15,22 +14,27 @@
     "fanclub": "De Officiële Elisa Fanclub",
     "visitorsStart": 1000001,
     "avatar": "_site/avatar.jpg",
-    "ogDescription": "Klik hier om binnen te gaan!!! ~*~ officiële fanpagina ~*~ x-x-x"
+    "ogDescription": "Klik hier om binnen te gaan!!! ~*~ officiële fanpagina ~*~ x-x-x",
+    "aliases": ["elisa"],
+    "_aliases_help": "Wie zich in Messenger aanmeldt met msnEmail, een alias of 'Elisa' is Elisa: mag overal posten + verjaardagsmodus."
   },
-
   "kids": [
-    { "name": "de grote", "age": "5" },
-    { "name": "de kleine", "age": "1,5" }
+    {
+      "name": "de grote",
+      "age": "5"
+    },
+    {
+      "name": "de kleine",
+      "age": "1,5"
+    }
   ],
-
   "photoRules": {
     "_help": "Foto's met een EXIF-datum in dit venster worden overgeslagen, behalve in albums met allowAllDates: true (trouwfeest). Overgeslagen foto's staan in content/excluded.txt.",
     "bannedFrom": "2023-06-01",
     "bannedTo": "2025-10-01"
   },
-
   "profile": {
-    "intro": "Hallo en welkom op de officiële fanpagina van {name}!!! Deze site werd met veel liefde (en te weinig slaap) gemaakt door haar grootste fans: {webmaster}, {kid1} en {kid2}. Alles wat je hier leest is 100% waar, behalve de dingen die niet waar zijn. Veel plezier en stuur haar zeker een berichtje via de chat!!! x-x-x",
+    "intro": "Hallo en welkom op de officiële fanpagina van {name}!!! Deze site werd met veel liefde (en te weinig slaap) gemaakt door haar grootste fans: {webmaster}, {kid1} en {kid2}. Alles wat je hier leest is 100% waar, behalve de dingen die niet waar zijn. Veel plezier en stuur haar zeker een berichtje via Messenger (rechtsonder)!!! x-x-x",
     "fields": [
       ["Naam", "{name}"],
       ["Leeftijd", "{age} jaar (voelt zich 17)"],
@@ -51,12 +55,26 @@
     "stats": {
       "title": "Elisa's stats volgens de kindjes",
       "groups": [
-        { "by": "{kid1} ({kid1age} jaar)", "items": [
-          ["Knuffelen", 10], ["Koekjes bakken", 9], ["Zingen", 11], ["Dansen", 8], ["Verstoppertje", 6, "verstopt zich altijd op dezelfde plek"], ["Streng zijn", 3]
-        ] },
-        { "by": "{kid2} ({kid2age} jaar)", "items": [
-          ["Mama", 10], ["Mama", 10], ["Mama!", 10], ["MAMA!!!", 10]
-        ] }
+        {
+          "by": "{kid1} ({kid1age} jaar)",
+          "items": [
+            ["Knuffelen", 10],
+            ["Koekjes bakken", 9],
+            ["Zingen", 11],
+            ["Dansen", 8],
+            ["Verstoppertje", 6, "verstopt zich altijd op dezelfde plek"],
+            ["Streng zijn", 3]
+          ]
+        },
+        {
+          "by": "{kid2} ({kid2age} jaar)",
+          "items": [
+            ["Mama", 10],
+            ["Mama", 10],
+            ["Mama!", 10],
+            ["MAMA!!!", 10]
+          ]
+        }
       ]
     },
     "music": {
@@ -68,72 +86,231 @@
     "links": {
       "title": "Mijn favoriete links",
       "items": [
-        { "title": "Chat!!!", "url": "#chat", "desc": "stuur iets liefs (of iets zots)" },
-        { "title": "Hoe geraak ik van Parijs terug naar huis", "url": "https://www.google.com/maps/dir/Paris/{city}", "desc": "voor het geval dat" },
-        { "title": "Croissant-calculator", "url": "#profiel", "desc": "1 croissant = 0 calorieën als je op reis bent (wetenschappelijk bewezen)" },
-        { "title": "Officiële fanclub-merchandise", "url": "#fotos", "desc": "binnenkort (sinds 2019)" },
-        { "title": "TODO inside joke", "url": "#", "desc": "TODO" }
+        {
+          "title": "Messenger!!!",
+          "url": "#msn",
+          "desc": "stuur iets liefs (of iets zots)"
+        },
+        {
+          "title": "Hoe geraak ik van Parijs terug naar huis",
+          "url": "https://www.google.com/maps/dir/Paris/{city}",
+          "desc": "voor het geval dat"
+        },
+        {
+          "title": "Croissant-calculator",
+          "url": "#profiel",
+          "desc": "1 croissant = 0 calorieën als je op reis bent (wetenschappelijk bewezen)"
+        },
+        {
+          "title": "Officiële fanclub-merchandise",
+          "url": "#fotos",
+          "desc": "binnenkort (sinds 2019)"
+        },
+        {
+          "title": "TODO inside joke",
+          "url": "#",
+          "desc": "TODO"
+        }
       ]
     }
   },
-
   "poll": {
     "id": "cool",
     "question": "Is Elisa cool?",
     "options": ["Ja", "Zeker", "Absoluut", "Ja (maar dat wist ik al)"]
   },
-
   "albums": {
     "_help": "Sleutel = mapnaam in content/photos/. captions: key -> tekst. cover: key van de coverfoto. sort: 'date' om op EXIF-datum te sorteren. order: lijst van keys voor manuele volgorde.",
-    "toen-ik-klein-was": { "title": "toen ik klein was :p", "desc": "Bewijsmateriaal dat {name} ooit kleiner was dan {kid1}.", "sort": "date", "captions": { "img_1000": "TODO onderschrift" } },
-    "trouwfeest": { "title": "trouwfeest ♥♥♥", "desc": "De dag dat de webmaster de lotto won.", "allowAllDates": true },
-    "mijn-lief-en-ik": { "title": "mijn lief & ik ♥", "desc": "Hij is braaf, hij mag blijven." },
-    "de-kindjes": { "title": "de kindjes ♥", "desc": "De twee kleinste fans (en de luidste).", "sort": "date" },
-    "random": { "title": "random :p", "desc": "Foto's die nergens anders pasten maar te goed zijn om weg te laten." },
-    "parijs": { "title": "parijs 🗼", "desc": "Hier komen de foto's van Parijs. {name}, dit is een hint." }
+    "toen-ik-klein-was": {
+      "title": "toen ik klein was :p",
+      "desc": "Bewijsmateriaal dat {name} ooit kleiner was dan {kid1}.",
+      "sort": "date",
+      "captions": {
+        "img_1000": "TODO onderschrift"
+      }
+    },
+    "trouwfeest": {
+      "title": "trouwfeest ♥♥♥",
+      "desc": "De dag dat de webmaster de lotto won.",
+      "allowAllDates": true
+    },
+    "mijn-lief-en-ik": {
+      "title": "mijn lief & ik ♥",
+      "desc": "Hij is braaf, hij mag blijven."
+    },
+    "de-kindjes": {
+      "title": "de kindjes ♥",
+      "desc": "De twee kleinste fans (en de luidste).",
+      "sort": "date"
+    },
+    "random": {
+      "title": "random :p",
+      "desc": "Foto's die nergens anders pasten maar te goed zijn om weg te laten."
+    },
+    "parijs": {
+      "title": "parijs 🗼",
+      "desc": "Hier komen de foto's van Parijs. {name}, dit is een hint."
+    }
   },
-
   "videos": {
     "title": "Elisa's webcam",
     "intro": "Lang voor TikTok had {name} al haar eigen vlogs. De fanclub heeft de archieven opengegooid. Kijken op eigen risico.",
     "defaultTitle": "Vlog",
     "defaultDesc": "Een echte {name}-vlog uit het archief. Kijkcijfers: 1.000.001.",
     "items": {
-      "vlog-demo-1": { "title": "Vlog #1: TODO", "desc": "TODO" },
-      "vlog-demo-2": { "title": "Vlog #2: TODO" }
+      "vlog-demo-1": {
+        "title": "Vlog #1: TODO",
+        "desc": "TODO"
+      },
+      "vlog-demo-2": {
+        "title": "Vlog #2: TODO"
+      }
     }
   },
-
-  "chat": {
-    "_help": "Eén MSN-groepsgesprek. Spraakclips uit content/audio/fanmail/ verschijnen als berichten van de contacten (sleutel = bestandsnaam zonder extensie). Getypte berichten komen live via Firebase. seed = berichten die er al in staan bij de start.",
-    "groupName": "Elisa Fanclub — groepsgesprek",
-    "welcome": "Je bent toegetreden tot het gesprek. Iedereen hier is fan van {name}. Zeg maar iets!",
-    "defaultStatus": "online",
-    "contacts": {
-      "oma": { "name": "Oma", "display": "~*~ Oma ~*~ (8) proficiat (8)", "pm": "ik heb dit zelf opgenomen", "status": "online", "avatar": "👵" },
-      "opa": { "name": "Opa", "display": "Opa", "pm": "waar is de knop", "status": "away", "avatar": "👴" },
-      "tante-an": { "name": "Tante An", "display": "..:: An ::.. ♥ bff 4 ever ♥", "pm": "TODO", "status": "online", "avatar": "💁‍♀️" },
-      "de-kindjes": { "name": "De kindjes", "display": "~*~ {kid1} & {kid2} ~*~ (L) mama (L)", "pm": "wanneer kom je terug", "status": "busy", "avatar": "🧒" },
-      "de-webmaster": { "name": "De webmaster", "display": "de webmaster (8) ik zie u graag (8)", "pm": "alles onder controle (bijna)", "status": "online", "avatar": "🤓" }
-    },
-    "seed": [
-      { "name": "{webmaster}", "message": "Eerste!!! Gelukkige verjaardag sgat. De kindjes slapen (bijna). Alles onder controle (bijna). Wij zien u graag. x-x-x", "date": "2026-09-19T00:01:00" },
-      { "name": "{kid1}", "message": "MAMA IK MIS JE. KOM JE MORGEN TERUG. IK HEB EEN TEKENING GEMAAKT. (getypt door papa, gedicteerd met veel volume)", "date": "2026-09-19T00:02:00" },
-      { "name": "{kid2}", "message": "mamamamamamamama (vertaling: proficiat)", "date": "2026-09-19T00:03:00" }
-    ]
-  },
-
   "avatars": ["😊", "😎", "😍", "🥳", "😜", "🤗", "🙃", "😇", "🤩", "😏", "🐶", "🐱", "🦄", "🍾", "🥐", "💃"],
   "emoticons": ["😊", "😉", "😛", "😍", "😂", "🥳", "😘", "❤️", "🎂", "🥐", "🗼", "🍷"],
-
   "toasts": [
-    { "from": "{kid1}", "text": "mama is de liefste!!!" },
-    { "from": "{kid2}", "text": "mamamamamama" },
-    { "from": "de webmaster", "text": "we missen u sgat x" },
-    { "from": "Oma", "text": "proficiat kindje!" },
-    { "from": "Systeem", "text": "{name} heeft 1 nieuw compliment ontvangen." },
-    { "from": "{kid1}", "text": "wanneer kom je terug?" },
-    { "from": "Systeem", "text": "Je bent bezoeker nr. 1.000.001. Proficiat!" },
-    { "from": "de webmaster", "text": "TODO nog meer complimentjes" }
-  ]
+    {
+      "from": "{kid1}",
+      "text": "mama is de liefste!!!"
+    },
+    {
+      "from": "{kid2}",
+      "text": "mamamamamama"
+    },
+    {
+      "from": "de webmaster",
+      "text": "we missen u sgat x"
+    },
+    {
+      "from": "Oma",
+      "text": "proficiat kindje!"
+    },
+    {
+      "from": "Systeem",
+      "text": "{name} heeft 1 nieuw compliment ontvangen."
+    },
+    {
+      "from": "{kid1}",
+      "text": "wanneer kom je terug?"
+    },
+    {
+      "from": "Systeem",
+      "text": "Je bent bezoeker nr. 1.000.001. Proficiat!"
+    },
+    {
+      "from": "de webmaster",
+      "text": "TODO nog meer complimentjes"
+    }
+  ],
+  "msn": {
+    "_help": "Messenger. Elke fan met een spraak- of videobericht (content/audio/fanmail/, content/video/fanmail/) krijgt een privégesprek waarin dat bericht al gepost staat; sleutel = bestandsnaam zonder extensie. Iedereen mag in het groepsgesprek posten; in een privégesprek enkel wie zich aanmeldde als die persoon (sleutel, naam of alias) of als Elisa. seed = berichten die al in het groepsgesprek staan.",
+    "groupName": "Elisa Fanclub",
+    "groupPm": "(8) iedereen hier is fan (8)",
+    "groupWelcome": "Groepsgesprek van de fanclub. Iedereen mag hier iets zeggen. {name} leest mee vanuit Parijs.",
+    "privateNotice": "Dit is een privégesprek tussen {contact} en {name}. Hier kan enkel {contact} zelf (of {name}) iets typen. Wil je iets zeggen? Dat kan in het groepsgesprek.",
+    "signinHint": "Geen wachtwoord nodig (het is 2008, iedereen kent het toch). Vul je naam of je oude MSN-adres in.",
+    "ads": [
+      "ADVERTENTIE: Gratis Elisa-ringtones! Klik hier! (niet echt)",
+      "Uw pc is traag? Elisa niet. Klik hier.",
+      "Gefeliciteerd! Je bent de 1.000.000ste bezoeker! Klik NIET hier.",
+      "Win een croissant. Elke dag. Voor altijd.",
+      "Zoekt u liefde? Elisa is bezet. Sorry."
+    ],
+    "defaultStatus": "online",
+    "contacts": {
+      "oma": {
+        "name": "Oma",
+        "display": "~*~ Oma ~*~ (8) proficiat (8)",
+        "pm": "ik heb dit zelf opgenomen",
+        "status": "online",
+        "avatar": "👵",
+        "aliases": ["oma", "bomma", "grootmoeder"]
+      },
+      "opa": {
+        "name": "Opa",
+        "display": "Opa",
+        "pm": "waar is de knop",
+        "status": "away",
+        "avatar": "👴",
+        "aliases": ["opa", "bompa"]
+      },
+      "tante-an": {
+        "name": "Tante An",
+        "display": "..:: An ::.. ♥ bff 4 ever ♥",
+        "pm": "TODO",
+        "status": "online",
+        "avatar": "💁‍♀️",
+        "aliases": ["an", "tante an", "tanteanke"]
+      },
+      "de-kindjes": {
+        "name": "De kindjes",
+        "display": "~*~ {kid1} & {kid2} ~*~ (L) mama (L)",
+        "pm": "wanneer kom je terug",
+        "status": "busy",
+        "avatar": "🧒",
+        "aliases": ["kindjes", "de kindjes"]
+      },
+      "de-webmaster": {
+        "name": "De webmaster",
+        "display": "de webmaster (8) ik zie u graag (8)",
+        "pm": "alles onder controle (bijna)",
+        "status": "online",
+        "avatar": "🤓",
+        "aliases": ["joep", "webmaster"]
+      }
+    },
+    "seed": [
+      {
+        "name": "{webmaster}",
+        "message": "Eerste!!! Gelukkige verjaardag sgat. De kindjes slapen (bijna). Alles onder controle (bijna). Wij zien u graag. x-x-x",
+        "date": "2026-09-19T00:01:00"
+      },
+      {
+        "name": "{kid1}",
+        "message": "MAMA IK MIS JE. KOM JE MORGEN TERUG. IK HEB EEN TEKENING GEMAAKT. (getypt door papa, gedicteerd met veel volume)",
+        "date": "2026-09-19T00:02:00"
+      },
+      {
+        "name": "{kid2}",
+        "message": "mamamamamamamama (vertaling: proficiat)",
+        "date": "2026-09-19T00:03:00"
+      }
+    ]
+  },
+  "bonzi": {
+    "name": "BonziBUDDY",
+    "intro": "Hallo! Ik ben Bonzi, je persoonlijke internetvriend. Ik ben hier om je te helpen. En om je e-mailadres te verkopen. Grapje! (Of niet.)",
+    "lines": [
+      "Wil je dat ik je startpagina verander naar de coole website van {name}? (Ja / Ja)",
+      "Heb je al een berichtje gestuurd naar {name}? Doe dat. Ik wacht.",
+      "Ik hou je in de gaten. Vriendelijk.",
+      "Psst. Het wachtwoord van Messenger is: geen wachtwoord.",
+      "Ik heb je e-mailadres net doorgestuurd naar 4 bedrijven. Grapje. (Of niet.) (Grapje.)",
+      "Wist je dat je mij kunt laten zingen? Klik op 'Zing'. Doe het niet. Doe het wel.",
+      "Ik ben geen virus. Zeggen ze.",
+      "Proficiat {name}!!! (Ik zeg dat tegen iedereen die dit leest, voor de zekerheid.)",
+      "Klik op 'Weg' als je mij niet meer wil zien. Ik neem het niet persoonlijk. (Wel.)",
+      "Ik heb 37 werkbalken voor je geïnstalleerd. Graag gedaan."
+    ],
+    "jokes": [
+      "Er zitten twee tomaten in de koelkast. Zegt de ene: 'Brr, koud hé.' Zegt de andere: 'AAAH, een pratende tomaat!'",
+      "Wat zegt de ene muur tegen de andere? Ik zie u op de hoek.",
+      "Wat is het toppunt van luiheid? Uw mond openhouden en hopen dat er een croissant in valt.",
+      "Kent ge die mop van dat bed? Die is nog niet opgemaakt.",
+      "Wat is oranje en klinkt als een papegaai? Een wortel.",
+      "Waarom kunnen vissen niet op MSN? Geen internet. En geen vingers.",
+      "Wat is het toppunt van geduld? Een sneeuwman die op de zomer wacht.",
+      "Ik ken een mop over Parijs, maar die is nogal Frans."
+    ],
+    "facts": [
+      "Wist je dat? {name} is jarig. Dat is 100% waar, ik heb het opgezocht.",
+      "Wist je dat? {name} heeft 1.000.001 fans. Ik ben er daar één van. Nummer 4.",
+      "Wist je dat? {name} is momenteel in Parijs. Ik heb haar locatie aan niemand doorgegeven. Echt niet.",
+      "Wist je dat? De kindjes gaven {name} 10/10 op knuffelen en 3/10 op streng zijn.",
+      "TODO: fun fact over {name}",
+      "TODO: nog een fun fact"
+    ],
+    "singLine": "(8) Lang zal ze leven, lang zal ze leven... (8) Ik zing vals, maar met overtuiging."
+  }
 }

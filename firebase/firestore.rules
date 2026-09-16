@@ -15,8 +15,9 @@ service cloud.firestore {
 
     match /guestbook/{id} {
       allow read: if true;
-      allow create: if request.resource.data.keys().hasOnly(['name', 'message', 'sticker', 'avatar', 'createdAt'])
-        && str('name', 40) && str('message', 600) && optStr('sticker', 30) && optStr('avatar', 8) && stamped();
+      // room: 'group' or the key of a contact (private conversation with Elisa)
+      allow create: if request.resource.data.keys().hasOnly(['name', 'message', 'room', 'createdAt'])
+        && str('name', 40) && str('message', 600) && optStr('room', 40) && stamped();
       allow update, delete: if false;
     }
     match /visitors/{id} {

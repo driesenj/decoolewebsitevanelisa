@@ -79,3 +79,6 @@ export function shuffle(arr) { const a = [...arr]; for (let i = a.length - 1; i 
 export const ageOn = (birth, on = new Date()) => { const b = new Date(birth); let a = on.getFullYear() - b.getFullYear(); const m = on.getMonth() - b.getMonth(); if (m < 0 || (m === 0 && on.getDate() < b.getDate())) a--; return a; };
 export const isTouch = matchMedia('(pointer: coarse)').matches;
 export const hasMouse = matchMedia('(pointer: fine)').matches;
+// "Tante An" / "tante.an@hotmail.com" / "Tanté An" -> "tante-an": used to match Messenger usernames to contacts
+export const norm = (x) => String(x || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .split('@')[0].replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
