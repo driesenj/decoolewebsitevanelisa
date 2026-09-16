@@ -1,5 +1,5 @@
-// Windows Live Messenger bits: sign-in screen, toasts, conversation window for the fanmail tab.
-import { h, clear, fmtDuration, todo, svg } from './util.js';
+// Windows Live Messenger bits: sign-in screen, toasts, and the group conversation window for the chat tab.
+import { h, clear, fmtDuration, relDate, todo, svg } from './util.js';
 import { sfx } from './sfx.js';
 import { player } from './player.js';
 
@@ -77,76 +77,137 @@ export function toast({ from, text, avatar = '💬', title = 'Windows Live Messe
   return el;
 }
 
-// ---- fanmail: contact list + conversation --------------------------------------------------------
+export function nudge(win) {
+  sfx.nudge();
+  win.classList.remove('shake'); void win.offsetWidth; win.classList.add('shake');
+}
+
+// ---- chat: one group conversation ----------------------------------------------------------------
+// Voice clips from the contacts open the log (they were "sent" before the site went live); typed
+// messages (seed + live) follow in time order. The participants list sits left on desktop and behind
+// a toggle on phones.
 const STATUS_LABEL = { online: 'Online', away: 'Afwezig', busy: 'Bezet', offline: 'Offline' };
 
-export function fanmailWindow({ site, contacts, onNavigate, initialKey, onGuestbook }) {
+export function chatWindow({ site, chat, contacts, avatarFor, getName, setName, onSend, onNavigate }) {
   const main = h('div', { class: 'msn-main' });
-  const win = h('div', { class: 'msn-win' }, ...titleBar('Windows Live Messenger', { menu: ['Bestand', 'Contactpersonen', 'Acties', 'Extra', 'Help'] }), main);
+  const win = h('div', { class: 'msn-win chat-win' }, ...titleBar(chat.groupName, { menu: ['Bestand', 'Bewerken', 'Acties', 'Extra', 'Help'] }), main);
   const list = h('div', { class: 'contacts' });
   const convo = h('div', { class: 'convo' });
   main.append(list, convo);
 
+  // participants -------------------------------------------------------------------------------------
   const groups = { online: [], away: [], busy: [], offline: [] };
   for (const c of contacts) (groups[c.status] || groups.online).push(c);
   list.append(h('div', { class: 'me' }, h('div', { class: 'av' }, '💖'),
-    h('div', { style: { minWidth: 0 } }, h('b', null, `${site.fanclub} (Online)`), h('small', null, '(8) de fanmail stroomt binnen (8)'))));
+    h('div', { style: { minWidth: 0 } }, h('b', null, site.displayName), h('small', null, site.personalMessage))));
   const onlineish = [...groups.online, ...groups.away, ...groups.busy];
   if (onlineish.length) list.append(h('div', { class: 'grp' }, `Online (${onlineish.length})`));
   onlineish.forEach(c => list.append(contactRow(c)));
   if (groups.offline.length) list.append(h('div', { class: 'grp' }, `Offline (${groups.offline.length})`));
   groups.offline.forEach(c => list.append(contactRow(c)));
-  if (!contacts.length) list.append(h('div', { class: 'grp' }, 'Nog geen spraakclips: zet ze in content/audio/fanmail/ en run npm run build.'));
-
+  if (!contacts.length) list.append(h('div', { class: 'grp' }, 'Nog geen spraakclips (content/audio/fanmail/).'));
   function contactRow(c) {
-    const row = h('div', { class: 'contact', dataset: { key: c.key }, onclick: () => onNavigate(c.key) },
+    return h('div', { class: 'contact', dataset: { key: c.key }, onclick: () => { main.classList.remove('show-list'); onNavigate(c.key); } },
       h('div', { class: `st ${c.status}` }),
       h('div', { class: 'dn' }, c.display || c.name, h('small', null, c.pm ? c.pm + ' · ' : '', h('span', { class: 'dur' }, '🎤 ' + fmtDuration(c.duration)))));
-    return row;
   }
 
-  function showEmpty() {
-    main.classList.remove('show-convo');
-    clear(convo).append(h('div', { class: 'empty' }, h('div', null, h('div', { style: { fontSize: '34px' } }, '🦋'), 'Klik op een contactpersoon om de spraakclip te beluisteren.', h('br'), h('small', null, 'Tip: probeer ook eens de Buzzer.'))));
-  }
-
-  function open(key) {
-    const c = contacts.find(x => x.key === key);
-    if (!c) return showEmpty();
-    main.classList.add('show-convo');
-    main.querySelectorAll('.contact').forEach(r => r.classList.toggle('active', r.dataset.key === key));
+  // conversation -------------------------------------------------------------------------------------
+  const log = h('div', { class: 'log' });
+  const clips = {};
+  log.append(h('div', { class: 'sys' }, todo(chat.welcome)));
+  for (const c of contacts) {
     const clip = clipPlayer(c);
-    const log = h('div', { class: 'log' },
-      h('div', { class: 'sys' }, `${c.name} is nu ${STATUS_LABEL[c.status] || 'Online'}.`),
-      h('div', { class: 'sys' }, 'Waarschuwing: accepteer nooit bestanden van mensen die je niet kent. Deze fan ken je wel.'),
-      h('div', { class: 'says' }, c.name, ' zegt:'),
-      h('div', { class: 'line' }, `${c.name} heeft een spraakclip verzonden (${fmtDuration(c.duration)})`),
+    clips[c.key] = clip;
+    log.append(h('div', { class: 'msg clipmsg', id: 'clip-' + c.key },
+      h('div', { class: 'says' }, h('span', { class: 'av' }, c.avatar), h('span', null, c.display || c.name, ' zegt:'), h('span', { class: 'tm' }, STATUS_LABEL[c.status] || 'Online')),
+      h('div', { class: 'line sys' }, `${c.name} heeft een spraakclip verzonden (${fmtDuration(c.duration)})`),
       clip.el,
-      c.text ? [h('div', { class: 'says' }, c.name, ' zegt:'), h('div', { class: 'line' }, todo(c.text))] : null,
-    );
-    const ta = h('textarea', { placeholder: 'Typ hier je antwoord... (wordt in het gastenboek geplaatst)' });
-    const input = h('div', { class: 'input' },
-      h('div', { class: 'tools' }, '😊', '😉', '😛', '😍', '🥳', '❤️', h('span', { class: 'sep' }),
-        h('button', { class: 'btn small', onclick: () => nudge(win) }, '⚡ Buzzer'),
-        h('button', { class: 'btn small', onclick: () => { clip.play(); } }, '🎤 Spraakclip')),
-      ta,
-      h('div', { class: 'send' }, h('span', null, 'Enter = verzenden (naar het gastenboek)'), h('button', { class: 'btn', onclick: send }, 'Verzenden')));
-    ta.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
-    function send() { const t = ta.value.trim(); if (!t) return nudge(win); onGuestbook?.(t, c); }
-    clear(convo).append(
-      h('div', { class: 'hd' }, h('div', { class: 'av' }, c.avatar || '🙂'),
-        h('div', { style: { minWidth: 0 } }, h('b', null, c.display || c.name), h('small', null, c.pm || '')),
-        h('button', { class: 'btn small back', onclick: () => onNavigate(null) }, '◀ Contacten')),
-      h('div', { class: 'to' }, `Aan: ${c.name} <${c.key}@hotmail.com>`),
-      log, input);
-    if (c.autoplay) clip.play();
+      c.text ? h('div', { class: 'line' }, todo(c.text)) : null));
   }
+  const msgs = h('div', { class: 'msgs' });
+  log.append(msgs);
 
-  if (initialKey) open(initialKey); else showEmpty();
-  return { el: win, open, showEmpty };
+  const toggle = h('button', { class: 'btn small list-toggle', onclick: () => main.classList.toggle('show-list') }, `👥 ${contacts.length}`);
+  const head = h('div', { class: 'hd' }, h('div', { class: 'av' }, '💖'),
+    h('div', { style: { minWidth: 0 } }, h('b', null, site.displayName), h('small', null, `Aan: ${site.name} <${site.msnEmail}> en ${contacts.length} fans`)),
+    toggle);
+
+  // input --------------------------------------------------------------------------------------------
+  const ta = h('textarea', { placeholder: `Typ hier je bericht voor ${site.name}...`, maxlength: 600 });
+  const nameInp = h('input', { type: 'text', placeholder: 'Je naam', maxlength: 40 });
+  const who = h('div', { class: 'who-line' });
+  const renderWho = () => {
+    const n = getName();
+    clear(who).append(...(n
+      ? [h('span', null, 'Je chat als ', h('b', null, avatarFor(n), ' ', n)), ' · ', h('a', { href: '#', onclick: (e) => { e.preventDefault(); setName(''); renderWho(); } }, 'iemand anders')]
+      : [h('span', null, 'Wie ben jij? '), nameInp]));
+  };
+  renderWho();
+  const sendBtn = h('button', { class: 'btn pink', onclick: send }, 'Verzenden');
+  const status = h('span', { class: 'send-status' });
+  async function send() {
+    let n = getName();
+    if (!n) { n = nameInp.value.trim(); if (!n) { nameInp.focus(); return nudge(win); } setName(n); renderWho(); }
+    const t = ta.value.trim();
+    if (!t) { ta.focus(); return nudge(win); }
+    sendBtn.disabled = true; status.textContent = 'verzenden...';
+    try {
+      const r = await onSend({ name: n, message: t });
+      ta.value = ''; sfx.pop();
+      status.textContent = r?.local ? 'bewaard op dit toestel (chat is offline)' : '';
+    } catch (e) { console.error(e); status.textContent = 'oei, dat lukte niet: ' + (e.message || e); }
+    sendBtn.disabled = false;
+    ta.focus();
+  }
+  ta.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+  nameInp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); ta.focus(); } });
+  const emo = (chat.emoticons || ['😊', '😉', '😛', '😍', '❤️', '🎂']).map(x => h('span', { class: 'emo', title: 'invoegen', onclick: () => insert(x) }, x));
+  function insert(x) { const s = ta.selectionStart ?? ta.value.length; ta.setRangeText(x, s, ta.selectionEnd ?? s, 'end'); ta.focus(); }
+  const input = h('div', { class: 'input' },
+    h('div', { class: 'tools' }, ...emo, h('span', { class: 'sep' }), h('button', { class: 'btn small', onclick: () => { nudge(win); log.append(h('div', { class: 'sys' }, 'Je hebt zojuist een Buzzer verzonden. (Elisa voelde dat in Parijs.)')); scrollToEnd(); } }, '⚡ Buzzer')),
+    who, ta,
+    h('div', { class: 'send' }, status, sendBtn));
+  convo.append(head, log, input);
+
+  // messages -----------------------------------------------------------------------------------------
+  const rendered = new Map();   // id -> element
+  function setMessages(listAsc) {
+    const ids = new Set(listAsc.map(m => m.id));
+    for (const [id, el] of rendered) if (!ids.has(id)) { el.remove(); rendered.delete(id); }
+    let last = null;
+    for (const m of listAsc) {
+      let el = rendered.get(m.id);
+      if (!el) {
+        el = h('div', { class: 'msg', dataset: { id: m.id } },
+          h('div', { class: 'says' }, h('span', { class: 'av' }, avatarFor(m.name)), h('span', null, m.name, ' zegt:'), h('span', { class: 'tm' })),
+          h('div', { class: 'line' }, m.message));
+        rendered.set(m.id, el);
+        if (last) last.after(el); else msgs.prepend(el);
+      }
+      el.classList.toggle('pending', !!m.pending);
+      el.querySelector('.tm').textContent = m.pending ? 'wordt verzonden...' : m.local ? 'alleen op dit toestel' : relDate(m.createdAt);
+      last = el;
+    }
+  }
+  function scrollToEnd() {
+    if (getComputedStyle(log).overflowY === 'auto') log.scrollTop = log.scrollHeight;
+    else msgs.lastElementChild?.scrollIntoView({ block: 'end', behavior: 'smooth' });
+  }
+  function nearEnd() {
+    if (getComputedStyle(log).overflowY === 'auto') return log.scrollHeight - log.scrollTop - log.clientHeight < 120;
+    const r = input.getBoundingClientRect(); return r.top < window.innerHeight + 200;
+  }
+  function focusContact(key) {
+    const el = log.querySelector('#clip-' + CSS.escape(key)); if (!el) return;
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1500);
+    clips[key]?.play();
+  }
+  return { el: win, setMessages, scrollToEnd, nearEnd, focusContact, focusInput: () => ta.focus() };
 }
 
-// voice-clip bubble with fake waveform, driven by the shared player
+// voice-clip bubble with a fake waveform, driven by the shared player
 function clipPlayer(c) {
   const bars = Array.from({ length: 28 }, (_, i) => h('i', { style: { height: (25 + 60 * Math.abs(Math.sin(i * 1.7 + c.key.length))) + '%' } }));
   const btn = h('button', { class: 'pl', title: 'Afspelen' }, '▶');
@@ -158,15 +219,8 @@ function clipPlayer(c) {
   });
   btn.addEventListener('click', play);
   const off = player.onChange((src, playing) => {
-    if (!el.isConnected) return off();   // bubble was replaced by another conversation: unsubscribe
+    if (!el.isConnected) return off();
     btn.textContent = src === c.src && playing ? '❚❚' : '▶';
   });
   return { el, play };
-}
-
-export function nudge(win) {
-  sfx.nudge();
-  win.classList.remove('shake'); void win.offsetWidth; win.classList.add('shake');
-  const log = win.querySelector('.log');
-  if (log) { log.append(h('div', { class: 'sys' }, 'Je hebt zojuist een Buzzer verzonden. (Elisa voelde dat in Parijs.)')); log.scrollTop = log.scrollHeight; }
 }

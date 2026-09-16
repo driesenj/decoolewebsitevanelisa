@@ -32,17 +32,21 @@ const docData = (d) => {
 // ---- guestbook ------------------------------------------------------------------------------------
 // Offline: entries are kept in localStorage so the writer at least sees their own message.
 const LOCAL_GB = 'gb.local';
-db.onGuestbook = (cb) => {
-  if (!db.enabled) { cb(store.get(LOCAL_GB, []).map(e => ({ ...e, createdAt: new Date(e.createdAt), local: true }))); return () => { }; }
+const localListeners = new Set();
+const localList = () => store.get(LOCAL_GB, []).map(e => ({ ...e, createdAt: new Date(e.createdAt), local: true }));
+// Chat messages live in the "guestbook" collection (that is what the rules file calls it).
+db.onMessages = (cb) => {
+  if (!db.enabled) { localListeners.add(cb); cb(localList()); return () => localListeners.delete(cb); }
   const q = m.query(m.collection(fs, 'guestbook'), m.orderBy('createdAt', 'desc'), m.limit(300));
-  return m.onSnapshot(q, snap => cb(snap.docs.map(docData)), err => console.warn('guestbook', err));
+  return m.onSnapshot(q, snap => cb(snap.docs.map(docData)), err => { console.warn('messages', err); db.error = err; cb([]); });
 };
-db.addGuestbook = async (entry) => {
-  const clean = { name: entry.name.slice(0, 40), message: entry.message.slice(0, 600), sticker: (entry.sticker || '').slice(0, 30), avatar: (entry.avatar || '').slice(0, 8) };
+db.addMessage = async ({ name, message }) => {
+  const clean = { name: name.slice(0, 40), message: message.slice(0, 600) };
   if (!db.enabled) {
     const list = store.get(LOCAL_GB, []);
     list.unshift({ ...clean, id: 'local-' + Date.now(), createdAt: new Date().toISOString() });
     store.set(LOCAL_GB, list);
+    for (const cb of localListeners) cb(localList());
     return { local: true };
   }
   await m.addDoc(m.collection(fs, 'guestbook'), { ...clean, createdAt: m.serverTimestamp() });

@@ -264,36 +264,12 @@
   }
  ],
  "assets": {
-  "_blog/1995.jpg": {
-   "w": 1000,
-   "h": 700
-  },
-  "_blog/2008.jpg": {
-   "w": 1000,
-   "h": 700
-  },
-  "_blog/2026.jpg": {
-   "w": 1000,
-   "h": 700
-  },
-  "_prijzen/medaille-1.jpg": {
-   "w": 800,
-   "h": 800
-  },
-  "_prijzen/medaille-2.jpg": {
-   "w": 800,
-   "h": 800
-  },
-  "_prijzen/medaille-3.jpg": {
-   "w": 800,
-   "h": 800
-  },
   "_site/avatar.jpg": {
    "w": 600,
    "h": 600
   }
  },
- "builtAt": "2026-09-15T21:43:37.065Z",
+ "builtAt": "2026-09-16T07:20:58.703Z",
  "audio": {
   "fanmail": [
    {

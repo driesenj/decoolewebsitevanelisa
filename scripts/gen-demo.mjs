@@ -46,10 +46,6 @@ for (const [slug, cfg] of Object.entries(albums)) {
     await placeholder(path.join(P, slug, `IMG_${1000 + i}.jpg`), `${slug} #${n}`, { w: portrait ? 900 : 1200, h: portrait ? 1200 : 900, date: cfg.dates[n - 1], seed: i });
   }
 }
-await ensureDir(path.join(P, '_blog'));
-for (const [n, y] of ['1995', '2008', '2026'].entries()) await placeholder(path.join(P, '_blog', `${y}.jpg`), `blog ${y}`, { w: 1000, h: 700, seed: n + 2 });
-await ensureDir(path.join(P, '_prijzen'));
-for (let n = 1; n <= 3; n++) await placeholder(path.join(P, '_prijzen', `medaille-${n}.jpg`), `bewijsstuk ${n}`, { w: 800, h: 800, seed: n + 4 });
 await ensureDir(path.join(P, '_site'));
 await placeholder(path.join(P, '_site', 'avatar.jpg'), 'Elisa', { w: 600, h: 600, seed: 0 });
 log('photos: ok');

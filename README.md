@@ -1,34 +1,42 @@
 # De coole website van Elisa
 
-Elisa's Netlog-profiel anno 2008, gemaakt door haar fanclub. Statische site op GitHub Pages, live gastenboek via Firebase.
+Elisa's Netlog-profiel anno 2008, gemaakt door haar fanclub. Statische site op GitHub Pages, live chat via Firebase.
 
 Live: https://driesenj.github.io/decoolewebsitevanelisa/
 
 ## Hoe het in elkaar zit
 
 ```
-index.html, css/, js/        de site zelf (vanilla JS, geen framework, hash-routing: #profiel #blog #fotos #videos #gastenboek #fanmail #prijzen)
+index.html, css/, js/        de site zelf (vanilla JS, geen framework, hash-routing: #profiel #chat #fotos #vlog)
 content/content.json         ALLE tekst. Hier vul je in.  Zie CONTENT-TODO.md.
 content/photos/<album>/      bronfoto's (niet in git)       ->  npm run build  ->  media/photos/<album>/  (max 1600px, EXIF gestript)
-content/photos/_blog/  _prijzen/  _site/     foto's voor blog / prijzenkast / avatar (mappen met _ zijn geen albums)
+content/photos/_site/        avatar.jpg (mappen met _ zijn geen albums)
 content/audio/fanmail/       spraakberichten (WhatsApp .opus/.m4a ok)   ->  media/audio/fanmail/*.mp3  (genormaliseerd, stilte weggeknipt)
-content/audio/soundboard/    korte clips voor "Mama zegt altijd..."
 content/audio/welkom.*       speelt na het aanmelden;  content/audio/lied.*  = het lied in de muziekbox
 content/video/               vlogs                                       ->  media/video/*.mp4 (past in 960x960, ~1 MB/min) + posters
 media/                       gebouwde output, WEL in git (dat is wat GitHub Pages serveert) + manifest.json
 scripts/                     build- en hulpscripts
-firebase/firestore.rules     beveiligingsregels voor het gastenboek
+firebase/firestore.rules     beveiligingsregels voor de chat
 ```
 
-**Sleutels**: overal waar content.json naar een bestand verwijst (captions, fanmail-contacten, videotitels, soundboard) gebruik je de
+**Sleutels**: overal waar content.json naar een bestand verwijst (captions, chat-contacten, videotitels) gebruik je de
 bestandsnaam in kleine letters zonder extensie: `IMG_1234.HEIC` -> `img_1234`, `Tante An.opus` -> `tante-an`.
+
+## Tabs
+
+- **Profiel** — Over mij, Ik hou van / Ik haat, stats volgens de kindjes, Wie bezocht mijn profiel (live), poll (live), muziek, links.
+- **Chat** — één MSN-groepsgesprek. De spraakclips uit `content/audio/fanmail/` staan bovenaan als berichten van de contacten
+  (deelnemerslijst links, op gsm achter de 👥-knop; klik op een naam = scroll + afspelen). Daaronder de getypte berichten:
+  `chat.seed` uit content.json, dan alles wat mensen live typen (Firebase). Nieuw bericht van iemand anders = MSN-ding + popup.
+- **Foto's** — albums, lightbox, hartjes (live).
+- **Vlog** — de vlogs in MSN-webcamvensters.
 
 ## Dagelijks gebruik
 
 ```bash
 npm install          # eenmalig
 npm run build        # foto's / audio / video verwerken naar media/ (alleen wat nieuw is)
-npm run dev          # lokaal bekijken op http://localhost:5173
+npm run dev          # lokaal bekijken op http://localhost:5173   (…/?login toont het aanmeldscherm opnieuw)
 ```
 
 Dan `content.json` aanpassen, `git add -A && git commit && git push`. GitHub Pages is een minuutje later bijgewerkt.
@@ -43,33 +51,30 @@ Foto's met een EXIF-datum tussen `photoRules.bannedFrom` en `bannedTo` (content.
 ### HEIC
 iPhone-foto's in HEIC gaan via ImageMagick (`magick`) naar JPEG; die staat al op deze pc.
 
-## Firebase (live gastenboek, bezoekers, poll, hartjes) — ±10 minuten
+## Firebase (live chat, bezoekers, poll, hartjes)
 
-1. https://console.firebase.google.com -> **Add project** -> naam bv. `elisa-fanclub` -> Google Analytics uit -> Create.
-2. Linkerkolom **Build -> Firestore Database -> Create database** -> locatie `europe-west1` (of eur3) -> **Start in production mode** -> Enable.
-3. Tabblad **Rules** -> alles vervangen door de inhoud van `firebase/firestore.rules` -> **Publish**.
-4. Tandwiel **Project settings -> Your apps -> `</>` (Web)** -> app nickname `site` -> Register (geen hosting) -> kopieer het `firebaseConfig`-object.
-5. Plak het in `js/firebase-config.js` (vervang `null`). Commit + push.
+Config staat in `js/firebase-config.js` (hou het `export`-woord als je ooit een nieuwe plakt). Regels: `firebase/firestore.rules`
+(Firestore -> Rules -> Publish). De `apiKey` mag publiek staan: de regels bepalen wat kan (lezen + toevoegen; niets wijzigen of wissen).
 
-Zonder config draait alles gewoon in offline modus (gastenboek toont enkel de seed-berichten uit content.json).
-De `apiKey` mag publiek staan: de regels bepalen wat kan (lezen + toevoegen; niets wijzigen of wissen). Ongewenste berichten
-verwijder je in de Firebase console onder Firestore -> guestbook.
+Berichten verwijderen: Firebase console -> Firestore Database -> collectie `guestbook` -> document -> prullenbak.
+(Ja, de collectie heet nog `guestbook`; de chat gebruikt ze.) Bezoekers staan in `visitors`, stemmen in `votes`, hartjes in `likes`.
 
 ## GitHub Pages
 
 Repo -> **Settings -> Pages -> Build and deployment: Deploy from a branch -> `main` / `/ (root)`** -> Save. Eénmalig.
-`.nojekyll` staat er zodat mappen met `_` (blog-foto's) meegenomen worden.
+`.nojekyll` staat er zodat mappen met `_` meegenomen worden.
 
 ## WhatsApp-voorbeeld
 
-De preview in WhatsApp komt van de `og:`-tags in `index.html` en `assets/og.jpg` (1200x630). WhatsApp cachet die per URL: eerst
-de definitieve afbeelding pushen, dan pas de link delen (of een `?v=2` achter de link zetten).
+De preview in WhatsApp komt van de `og:`-tags in `index.html` en `assets/og.jpg` (1200x630, maak met
+`node scripts/gen-og.mjs content/photos/_site/avatar.jpg`). WhatsApp cachet die per URL: eerst de definitieve afbeelding pushen,
+dan pas de link delen (of een `?v=2` achter de link zetten).
 
 ## Extra's die er in zitten
 
 - MSN-aanmeldscherm als "cold open"; de tik op *Aanmelden* ontgrendelt meteen audio, daarna speelt `welkom.mp3`.
-- Vul je naam in bij "Laat weten dat je langs was" -> verschijnt bij *Wie bezocht mijn profiel*. Vul je **Elisa** in -> confetti + verjaardagsmodus.
-- `Afmelden` (rechtsboven of in de footer) toont het aanmeldscherm opnieuw.
-- MSN-toasts met complimentjes elke ±75 s (lijst `toasts` in content.json; regels met TODO worden overgeslagen).
-- Buzzer in het fanmail-venster schudt het scherm. Sparkle-cursor enkel met muis.
+- Vul je naam in bij "Laat weten dat je langs was" (of in de chat) -> verschijnt bij *Wie bezocht mijn profiel*.
+  Vul je **Elisa** in -> confetti + verjaardagsmodus.
+- MSN-popups met complimentjes elke ±75 s (lijst `toasts` in content.json; regels met TODO worden overgeslagen); klik = naar de chat.
+- Buzzer in het chatvenster schudt het scherm. Sparkle-cursor enkel met muis.
 - Alle `TODO`'s uit content.json worden geel gemarkeerd op de site, zodat je niets vergeet.

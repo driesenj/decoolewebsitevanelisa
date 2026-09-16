@@ -1,18 +1,15 @@
-// De coole website van Elisa — main module. One page, hash-routed tabs (#profiel, #fotos/album/3, ...).
-import { h, $, clear, append, store, session, fmtDate, relDate, fmtDuration, fmtNum, template, todo, pick, shuffle, ageOn, hasMouse, svg } from './util.js';
+// De coole website van Elisa — main module. One page, hash-routed tabs (#profiel, #chat/oma, #fotos/album/3, #vlog).
+import { h, $, clear, store, session, fmtDate, relDate, fmtDuration, fmtNum, template, todo, pick, shuffle, hasMouse } from './util.js';
 import { sfx } from './sfx.js';
 import { player } from './player.js';
 import { db, initDb } from './db.js';
-import { showSignIn, toast, fanmailWindow, titleBar, nudge } from './msn.js';
+import { showSignIn, toast, chatWindow, titleBar, nudge } from './msn.js';
 
-const TABS = [
-  ['profiel', 'Profiel'], ['blog', 'Blog'], ['fotos', "Foto's"], ['videos', "Video's"],
-  ['gastenboek', 'Gastenboek'], ['fanmail', 'Fanmail'], ['prijzen', 'Prijzen'],
-];
+const TABS = [['profiel', 'Profiel'], ['chat', 'Chat'], ['fotos', "Foto's"], ['vlog', 'Vlog']];
 const MEDIA = 'media/';
 let C, M, site, vars;           // content, manifest, site block, template vars
-const live = { guestbook: [], visitors: [], likes: {}, votes: {} };
-const subs = {};                // live listeners, set up once
+const live = { messages: [], visitors: [], likes: {}, votes: [] };
+let messagesLoaded = false;
 
 // ---- boot ---------------------------------------------------------------------------------------
 async function boot() {
@@ -22,9 +19,9 @@ async function boot() {
   ]);
   M = { albums: [], assets: {}, audio: { fanmail: [], soundboard: [], singles: {} }, videos: [], ...manifest };
   const s = content.site;
-  const age = new Date().getFullYear() - new Date(s.birthday).getFullYear();
   vars = {
-    name: s.name, age, city: s.city, webmaster: s.webmaster, msnEmail: s.msnEmail, displayName: s.displayName,
+    name: s.name, age: new Date().getFullYear() - new Date(s.birthday).getFullYear(), city: s.city, webmaster: s.webmaster,
+    msnEmail: s.msnEmail, displayName: s.displayName,
     kid1: content.kids?.[0]?.name || 'de grote', kid2: content.kids?.[1]?.name || 'de kleine',
     kid1age: content.kids?.[0]?.age || '', kid2age: content.kids?.[1]?.age || '',
     birthdayLong: fmtDate(s.birthday),
@@ -42,6 +39,8 @@ async function boot() {
   startLive();
   route();
 
+  // ?login in the URL forces the sign-in screen again (handy for testing)
+  if (new URLSearchParams(location.search).has('login')) session.set('signedIn', false);
   if (session.get('signedIn')) afterSignIn(false);
   else showSignIn(site, () => { session.set('signedIn', true); afterSignIn(true); });
 
@@ -52,7 +51,7 @@ function afterSignIn(fresh) {
   const welkom = M.audio.singles?.welkom;
   if (fresh) {
     setTimeout(() => {
-      toast({ from: null, avatar: '💖', text: h('span', null, h('b', null, site.fanclub), ' heeft zich zojuist aangemeld.') });
+      toast({ from: null, avatar: '💖', text: h('span', null, h('b', null, site.fanclub), ' heeft zich zojuist aangemeld.'), onClick: () => { location.hash = '#chat'; } });
       if (welkom) player.play(MEDIA + 'audio/' + welkom.file);
     }, 700);
   }
@@ -60,32 +59,28 @@ function afterSignIn(fresh) {
   if (visitorName() && /elisa/i.test(visitorName()) && !session.get('partyDone')) setTimeout(party, 1500);
 }
 
-// ---- shell: top bar, profile card, tabs ---------------------------------------------------------
+// ---- shell: profile card + tabs -------------------------------------------------------------------
 function renderShell() {
-  $('#last-updated').textContent = fmtDate(site.lastUpdated, { day: '2-digit', month: '2-digit', year: 'numeric' });
   const views = store.get('pageviews', site.visitorsStart) + 1;
   store.set('pageviews', views);
-  $('#pageviews').textContent = fmtNum(views);
-  for (const id of ['#signout', '#footer-signout']) $(id).addEventListener('click', e => { e.preventDefault(); session.set('signedIn', false); location.hash = '#profiel'; location.reload(); });
 
   const card = $('#profile-card');
   const sparks = [[-10, -8, 0], [104, -12, .3], [118, 60, .6], [96, 112, .15], [-14, 100, .45], [50, -18, .8]].map(([x, y, d]) =>
     h('span', { class: 'spark', style: { left: x + 'px', top: y + 'px', animationDelay: d + 's' } }, '✦'));
   const avatarSrc = M.assets[site.avatar] ? MEDIA + 'photos/' + site.avatar : null;
   clear(card).append(
-    h('div', { class: 'avatar' }, avatarSrc ? h('img', { src: avatarSrc, alt: site.name }) : h('div', { style: { width: '120px', height: '120px', background: '#ffd6ee', display: 'grid', placeItems: 'center', fontSize: '50px', outline: '2px solid #ff3fa4', border: '3px solid #fff' } }, '💖'), ...sparks),
+    h('div', { class: 'avatar' }, avatarSrc ? h('img', { src: avatarSrc, alt: site.name }) : h('div', { class: 'noavatar' }, '💖'), ...sparks),
     h('div', { class: 'who' },
       h('h1', { class: 'glitter' }, site.displayName),
       h('p', { class: 'pm' }, site.personalMessage),
       h('p', { class: 'meta' }, h('span', { class: 'online' }), h('b', null, 'Online'), ` · Vrouw · ${vars.age} jaar · ${site.city} · Laatst online: `, h('b', null, 'nu, vanuit ', site.location)),
       h('div', { class: 'actions' },
-        h('a', { class: 'btn pink', href: '#gastenboek' }, '✎ Schrijf in mijn gastenboek'),
-        h('a', { class: 'btn', href: '#fanmail' }, '💬 Stuur bericht'),
+        h('a', { class: 'btn pink', href: '#chat' }, '💬 Stuur me een bericht'),
         h('button', { class: 'btn', onclick: () => { sfx.pop(); toast({ from: 'Systeem', avatar: '🦋', text: `${site.name} is al je vriend(in). Al jaren. Dat weet je toch?` }); } }, '+ Voeg toe als vriend'))),
     h('div', { class: 'side-stats' },
       h('div', null, h('b', null, fmtNum(views)), h('br'), 'profielbezoeken'),
       h('div', null, h('b', null, '∞'), h('br'), 'vrienden'),
-      h('div', null, h('b', { id: 'gb-count' }, '0'), h('br'), 'gastenboek')),
+      h('div', null, h('b', { id: 'msg-count' }, '0'), h('br'), 'berichten')),
     visitorBox(),
   );
 
@@ -94,43 +89,48 @@ function renderShell() {
   updateCounts();
 }
 
+const messageCount = () => live.messages.length + C.chat.seed.length;
 function updateCounts() {
   const counts = {
     fotos: M.albums.reduce((n, a) => n + a.count, 0) || null,
-    videos: M.videos.length || null,
-    gastenboek: (live.guestbook.length + C.guestbook.seed.length) || null,
-    fanmail: M.audio.fanmail.length || null,
-    prijzen: C.awards.items.length,
-    blog: C.timeline.items.length,
+    vlog: M.videos.length || null,
+    chat: (messageCount() + M.audio.fanmail.length) || null,
   };
   for (const [k, v] of Object.entries(counts)) { const el = $(`[data-count="${k}"]`); if (el) el.textContent = v ? `(${v})` : ''; }
-  const gb = $('#gb-count'); if (gb) gb.textContent = fmtNum(live.guestbook.length + C.guestbook.seed.length);
-  $('#bar-msgcount').textContent = `(${fmtNum(live.guestbook.length + C.guestbook.seed.length)})`;
+  const mc = $('#msg-count'); if (mc) mc.textContent = fmtNum(messageCount());
 }
 
-// ---- visitor name ("wie bezocht mijn profiel") ---------------------------------------------------
+// ---- visitor name ("wie bezocht mijn profiel" + chat name) -----------------------------------------
 const visitorName = () => store.get('visitor.name', '');
+function setVisitorName(v) {
+  store.set('visitor.name', v);
+  if (v) db.addVisitor(v).catch(() => { });
+  document.querySelectorAll('.visitor-box').forEach(b => b.dispatchEvent(new Event('refresh')));
+}
+function avatarFor(name) {
+  let x = 7; for (const ch of String(name || '').toLowerCase()) x = (x * 31 + ch.codePointAt(0)) >>> 0;
+  return C.avatars[x % C.avatars.length];
+}
 function visitorBox() {
   const box = h('div', { class: 'visitor-box' });
   const render = () => {
     const name = visitorName();
     if (name) {
       clear(box).append(h('span', null, `👋 Hey ${name}! Je bezoek staat genoteerd.`),
-        h('a', { href: '#', class: 'small', onclick: (e) => { e.preventDefault(); store.set('visitor.name', ''); render(); } }, 'ik ben iemand anders'));
+        h('a', { href: '#', class: 'small', onclick: (e) => { e.preventDefault(); setVisitorName(''); } }, 'ik ben iemand anders'));
       return;
     }
     const inp = h('input', { type: 'text', placeholder: 'jouw naam', maxlength: 40 });
-    const go = async () => {
+    const go = () => {
       const v = inp.value.trim(); if (!v) return inp.focus();
-      store.set('visitor.name', v);
-      db.addVisitor(v).catch(() => { });
-      sfx.pop(); render();
+      setVisitorName(v); sfx.pop();
       if (/elisa/i.test(v)) party();
       else toast({ from: 'Systeem', avatar: '🦋', text: `Welkom ${v}! ${site.name} ziet nu dat je langs geweest bent.` });
     };
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
     clear(box).append(h('span', null, '👋 Laat weten dat je langs was:'), inp, h('button', { class: 'btn', onclick: go }, 'OK'));
   };
+  box.addEventListener('refresh', render);
   render();
   return box;
 }
@@ -139,7 +139,7 @@ function party() {
   session.set('partyDone', true);
   sfx.tada();
   confetti();
-  setTimeout(() => toast({ from: site.fanclub, avatar: '🎂', ms: 12000, text: `GELUKKIGE VERJAARDAG ${site.name.toUpperCase()}!!! (L)(L)(L) Dit is allemaal voor jou. Klik hier voor je fanmail.`, onClick: () => { location.hash = '#fanmail'; } }), 300);
+  setTimeout(() => toast({ from: site.fanclub, avatar: '🎂', ms: 12000, text: `GELUKKIGE VERJAARDAG ${site.name.toUpperCase()}!!! (L)(L)(L) Dit is allemaal voor jou. Klik hier voor je berichten.`, onClick: () => { location.hash = '#chat'; } }), 300);
 }
 function confetti() {
   const colors = ['#ff3fa4', '#fff', '#ffd400', '#ff0080', '#7c4dff', '#00e0ff'];
@@ -150,11 +150,30 @@ function confetti() {
 }
 
 // ---- live data --------------------------------------------------------------------------------
+// seed messages (content.json) always open the conversation, live ones follow in time order
+function allMessagesAsc() {
+  const seeds = C.chat.seed.map((s, i) => ({ ...s, id: 'seed' + i, createdAt: new Date(s.date), seed: true }));
+  return [...seeds, ...[...live.messages].sort((a, b) => a.createdAt - b.createdAt)];
+}
 function startLive() {
-  subs.gb = db.onGuestbook(list => { live.guestbook = list; updateCounts(); if (current.tab === 'gastenboek') renderGuestbookList(); });
-  subs.vis = db.onVisitors(list => { live.visitors = list; if (current.tab === 'profiel') renderVisitors(); });
-  subs.likes = db.onLikes(map => { live.likes = map; refreshLikes(); });
-  subs.votes = db.onVotes(C.poll.id, votes => { live.votes = votes; if (current.tab === 'profiel') renderPoll(); });
+  db.onMessages(list => {
+    const known = new Set(live.messages.map(m => m.id));
+    const fresh = messagesLoaded ? list.filter(m => !known.has(m.id) && !m.pending && m.name !== visitorName()) : [];
+    live.messages = list;
+    updateCounts();
+    const wasNear = chatWin?.nearEnd();
+    chatWin?.setMessages(allMessagesAsc());
+    if (fresh.length) {
+      const m = fresh[fresh.length - 1];
+      sfx.ding();
+      if (current.tab === 'chat' && wasNear) chatWin.scrollToEnd();
+      else toast({ from: m.name, avatar: avatarFor(m.name), text: m.message.slice(0, 120), onClick: () => { location.hash = '#chat'; setTimeout(() => chatWin?.scrollToEnd(), 400); } });
+    }
+    messagesLoaded = true;
+  });
+  db.onVisitors(list => { live.visitors = list; if (current.tab === 'profiel') renderVisitors(); });
+  db.onLikes(map => { live.likes = map; refreshLikes(); });
+  db.onVotes(C.poll.id, votes => { live.votes = votes; if (current.tab === 'profiel') renderPoll(); });
 }
 
 // ---- router -----------------------------------------------------------------------------------
@@ -167,15 +186,13 @@ function route() {
   const first = current.tab === null;
   current.tab = known; current.args = args;
   const view = $('#view');
-  const active = $(`#tabs a[data-tab="${known}"]`);
-  if (active) { const t = $('#tabs'); t.scrollLeft = active.offsetLeft - t.clientWidth / 2 + active.clientWidth / 2; }
-  if (known === 'fotos') { renderFotos(view, args, sameTab); if (!sameTab && !first) window.scrollTo({ top: $('#tabs').offsetTop - 40, behavior: 'smooth' }); return; }
-  if (known === 'fanmail' && sameTab && fanmailWin) { fanmailWin.open(args[0] || null); return; }
+  const scrollUp = () => { if (!sameTab && !first) window.scrollTo({ top: $('#tabs').offsetTop - 6, behavior: 'smooth' }); };
+  if (known === 'fotos') { renderFotos(view, args, sameTab); scrollUp(); return; }
   closeLightbox(false);
+  if (known === 'chat' && sameTab && chatWin) { if (args[0]) chatWin.focusContact(args[0]); return; }
   clear(view);
-  ({ profiel: renderProfiel, blog: renderBlog, videos: renderVideos, gastenboek: renderGastenboek, fanmail: renderFanmail, prijzen: renderPrijzen })[known](view, args);
-  // on a tab switch, bring the tab strip to the top (under the sticky bar); the first render keeps the profile header in view
-  if (!sameTab && !first) window.scrollTo({ top: $('#tabs').offsetTop - 40, behavior: 'smooth' });
+  ({ profiel: renderProfiel, chat: renderChat, vlog: renderVlog })[known](view, args);
+  scrollUp();
 }
 const box = (title, body, { right, cls = '' } = {}) => h('div', { class: 'box ' + cls }, h('h3', null, title, right ? h('span', { class: 'r' }, right) : null), h('div', { class: 'body' }, body));
 
@@ -192,12 +209,10 @@ function renderProfiel(view) {
       h('div', null, h('h4', null, ':@ Ik haat'), h('ul', null, p.hates.map(x => h('li', null, todo(x))))))),
     box(p.stats.title, h('div', { class: 'stats' }, p.stats.groups.map(g => h('div', { class: 'group' }, h('h4', null, 'Beoordeeld door ', h('b', null, todo(g.by))),
       g.items.map(([label, val, note]) => h('div', { class: 'stat' }, h('span', null, label), h('div', { class: 'bar' }, h('i', { dataset: { w: Math.min(100, val * 10) } })), h('span', { class: 'val' }, `${val}/10`), note ? h('span', { class: 'note' }, note) : null)))))),
-    soundboardBox(),
   );
   const side = h('div', null,
     box('Wie bezocht mijn profiel', h('div', { id: 'visitors' })),
     box('Poll', h('div', { id: 'poll', class: 'poll' })),
-    box(p.friends.title, h('div', { class: 'friends' }, p.friends.items.map(f => h('div', { class: 'f', title: f.display }, h('div', { class: 'av' }, f.avatar), h('div', { class: 'nm' }, todo(f.name)), h('div', { class: 'nt' }, f.note))))),
     musicBox(),
     box(p.links.title, h('ul', { class: 'links' }, p.links.items.map(l => h('li', null, h('a', { href: l.url, target: l.url.startsWith('#') ? null : '_blank', rel: 'noopener' }, todo(l.title)), h('small', null, todo(l.desc)))))),
   );
@@ -215,7 +230,7 @@ function renderVisitors() {
   if (!db.enabled) el.append(h('p', { class: 'muted small' }, 'Bezoekers worden pas bijgehouden zodra Firebase is ingesteld (zie README).'));
   if (!list.length && me) list.push({ name: me, createdAt: new Date() });
   if (!list.length) { el.append(h('p', { class: 'muted' }, 'Nog niemand. Wees de eerste: vul hierboven je naam in!')); return; }
-  el.append(h('div', { class: 'visitors' }, list.map(v => h('span', { class: 'v' }, h('i', null, v.name.trim()[0].toUpperCase()), v.name, h('small', null, ' ', relDate(v.createdAt).replace(' om', ','))))),
+  el.append(h('div', { class: 'visitors' }, list.map(v => h('span', { class: 'v' }, h('i', null, avatarFor(v.name)), v.name, h('small', null, ' ', relDate(v.createdAt).replace(' om', ','))))),
     h('p', { class: 'small muted', style: { margin: '6px 0 0' } }, `${fmtNum(live.visitors.length)} recente bezoeken · de webmaster (1.000.000 keer)`));
 }
 
@@ -249,34 +264,26 @@ function musicBox() {
   return box(mu.title, h('div', { class: 'music' }, np, h('ol', null, mu.top.map(t => h('li', null, todo(t))))));
 }
 
-function soundboardBox() {
-  const items = M.audio.soundboard; if (!items.length) return null;
-  const btns = items.map(s => {
-    const src = MEDIA + 'audio/' + s.file;
-    const b = h('button', { class: 'btn', onclick: () => player.play(src) }, '🔊 ', todo(C.soundboard.items[s.key] || s.key));
-    player.onChange((cur, playing) => { if (b.isConnected) b.classList.toggle('playing', cur === src && playing); });
-    return b;
+// ---- chat -------------------------------------------------------------------------------------
+let chatWin = null;
+function renderChat(view, args) {
+  const F = C.chat;
+  const order = Object.keys(F.contacts).filter(k => !k.startsWith('_'));
+  const contacts = M.audio.fanmail.map(a => {
+    const meta = F.contacts[a.key] || {};
+    const name = meta.name || a.key.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    return { key: a.key, src: MEDIA + 'audio/' + a.file, duration: a.duration, name, display: meta.display || name, pm: meta.pm || '', status: meta.status || F.defaultStatus || 'online', avatar: meta.avatar || '🙂', text: meta.text };
+  }).sort((a, b) => { const ia = order.indexOf(a.key), ib = order.indexOf(b.key); return (ia < 0 ? 1e9 : ia) - (ib < 0 ? 1e9 : ib); });
+  chatWin = chatWindow({
+    site, chat: { ...F, emoticons: C.emoticons }, contacts, avatarFor,
+    getName: visitorName, setName: setVisitorName,
+    onSend: ({ name, message }) => db.addMessage({ name, message }),
+    onNavigate: (key) => { location.hash = key ? `#chat/${key}` : '#chat'; },
   });
-  return box(C.soundboard.title, [h('p', { class: 'muted small' }, todo(C.soundboard.intro)), h('div', { class: 'soundboard' }, btns)]);
-}
-
-// ---- blog / timeline --------------------------------------------------------------------------
-function renderBlog(view) {
-  const items = [...C.timeline.items].map((it, i) => ({ ...it, i })).sort((a, b) => (a.year ?? 9998) - (b.year ?? 9998) || a.i - b.i);
-  const years = [...new Set(items.map(x => x.year ?? '20??'))];
-  const posts = items.map(it => {
-    const asset = it.photo && M.assets[it.photo];
-    return h('article', { class: 'post', id: 'y' + (it.year ?? 'x') },
-      h('h4', null, h('span', { class: 'year-badge' }, it.year ?? '20??'), todo(it.title)),
-      h('div', { class: 'meta' }, 'Geplaatst op ', h('b', null, it.date ? fmtDate(it.date) : (it.year ? `ergens in ${it.year}` : 'datum onbekend')), ' door ', h('b', null, site.fanclub), ' · Categorie: Het leven van ', site.name),
-      asset ? h('img', { src: MEDIA + 'photos/' + it.photo, alt: it.title, loading: 'lazy', width: asset.w, height: asset.h }) : null,
-      h('p', null, todo(it.text)),
-      h('div', { class: 'foot' }, h('a', { href: '#gastenboek' }, `Reacties (${3 + (it.i * 7) % 11})`), ' · ', h('a', { href: '#', onclick: (e) => { e.preventDefault(); nudge(e.target.closest('.post')); } }, 'Kudos geven'), ' · Permalink'));
-  });
-  view.append(h('div', { class: 'cols' },
-    box('Blog', [h('p', { class: 'intro muted' }, todo(C.timeline.intro)), posts]),
-    h('div', null, box('Archief', h('div', { class: 'archive' }, years.map(y => h('a', { href: '#blog', onclick: (e) => { e.preventDefault(); document.getElementById('y' + (y === '20??' ? 'x' : y))?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }, `» ${y} (${items.filter(x => (x.year ?? '20??') === y).length})`)))),
-      box('Over deze blog', h('p', null, 'Bijgehouden door de fanclub sinds 1995 (met terugwerkende kracht). Alle feiten gecontroleerd door ', h('b', null, vars.kid1), '.')))));
+  view.append(chatWin.el);
+  chatWin.setMessages(allMessagesAsc());
+  if (args[0]) setTimeout(() => chatWin.focusContact(args[0]), 50);
+  else if (!db.enabled || messagesLoaded) requestAnimationFrame(() => chatWin.scrollToEnd());
 }
 
 // ---- foto's -----------------------------------------------------------------------------------
@@ -336,7 +343,6 @@ function openLightbox(album, idx) {
     h('div', { class: 'cap' }, h('div', { class: 'txt' }, todo(cfg.captions?.[p.key] || ''), p.date ? h('div', { class: 'small muted' }, fmtDate(p.date)) : null), heart),
   );
   lb.el.hidden = false; document.body.style.overflow = 'hidden';
-  // preload neighbours
   [1, -1].forEach(d => { const q = album.photos[(idx + d + album.photos.length) % album.photos.length]; new Image().src = `${MEDIA}photos/${album.slug}/${q.file}`; });
   lb.go = go;
 }
@@ -352,8 +358,8 @@ let tx = null;
 lb.el.addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive: true });
 lb.el.addEventListener('touchend', e => { if (tx == null) return; const dx = e.changedTouches[0].clientX - tx; tx = null; if (Math.abs(dx) > 50) lb.go?.(dx < 0 ? 1 : -1); });
 
-// ---- video's ----------------------------------------------------------------------------------
-function renderVideos(view) {
+// ---- vlog -------------------------------------------------------------------------------------
+function renderVlog(view) {
   const V = C.videos;
   const cards = M.videos.map((v, i) => {
     const meta = V.items[v.key] || {};
@@ -367,82 +373,6 @@ function renderVideos(view) {
     cards.length ? h('div', { class: 'vids' }, cards) : h('p', null, 'Nog geen vlogs. Zet ze in content/video/ en run npm run build.')]));
 }
 
-// ---- gastenboek -------------------------------------------------------------------------------
-function renderGastenboek(view, args) {
-  const G = C.guestbook;
-  const name = h('input', { type: 'text', placeholder: 'Je naam', maxlength: 40, value: visitorName() });
-  const msg = h('textarea', { placeholder: 'Je bericht voor ' + site.name + '...', maxlength: 600 });
-  const prefill = session.get('gb.prefill'); if (prefill) { msg.value = prefill; session.set('gb.prefill', null); }
-  const avatars = h('div', { class: 'picker' }, C.avatars.map((a, i) => h('label', null, h('input', { type: 'radio', name: 'av', value: a, checked: i === 0 }), h('span', { class: 'av' }, a))));
-  const stickers = h('div', { class: 'picker' }, C.stickers.map((s, i) => h('label', null, h('input', { type: 'radio', name: 'stk', value: s, checked: i === 0 }), h('span', { class: 'stk glitter' }, s))));
-  const status = h('div', { class: 'gb-status' }, db.enabled ? 'Live gastenboek: je bericht verschijnt meteen, ook op de gsm van ' + site.name + ' in Parijs.' : 'Gastenboek nog niet online (Firebase niet ingesteld): je bericht blijft voorlopig op dit toestel.');
-  const btn = h('button', { class: 'btn pink', onclick: async () => {
-    const n = name.value.trim(), t = msg.value.trim();
-    if (!n) { name.focus(); return nudge(form.closest('.box')); }
-    if (!t) { msg.focus(); return nudge(form.closest('.box')); }
-    btn.disabled = true;
-    try {
-      if (!visitorName()) { store.set('visitor.name', n); db.addVisitor(n).catch(() => { }); }
-      const r = await db.addGuestbook({ name: n, message: t, sticker: form.querySelector('[name=stk]:checked')?.value, avatar: form.querySelector('[name=av]:checked')?.value });
-      msg.value = ''; sfx.ding();
-      toast({ from: site.fanclub, avatar: '💖', text: r.local ? 'Bewaard op dit toestel. (Zet Firebase aan om het voor iedereen te tonen.)' : 'Bericht geplaatst! ' + site.name + ' kan het nu lezen.' });
-      if (r.local) { subs.gb?.(); subs.gb = db.onGuestbook(list => { live.guestbook = list; updateCounts(); renderGuestbookList(); }); }
-    } catch (e) { console.error(e); toast({ from: 'Systeem', avatar: '⚠️', text: 'Oei, dat lukte niet: ' + (e.message || e) }); }
-    btn.disabled = false;
-  } }, 'Plaats bericht');
-  const form = h('div', { class: 'gb-form' },
-    h('div', { class: 'row' }, name, h('span', { class: 'small muted' }, 'Kies je avatar:'), avatars),
-    msg,
-    h('div', { class: 'row' }, h('span', { class: 'small muted' }, 'Glitter-sticker:'), stickers),
-    h('div', { class: 'row' }, btn, status));
-  view.append(box(G.title, [h('p', { class: 'intro' }, todo(G.intro)), form]), box('Berichten', h('div', { id: 'gb-list' }), { right: h('span', { id: 'gb-total' }) }));
-  renderGuestbookList();
-}
-function renderGuestbookList() {
-  const el = $('#gb-list'); if (!el) return;
-  const seeds = C.guestbook.seed.map((s, i) => ({ ...s, id: 'seed' + i, createdAt: new Date(s.date), seed: true }));
-  const all = [...live.guestbook, ...seeds].sort((a, b) => b.createdAt - a.createdAt);
-  $('#gb-total').textContent = `${fmtNum(all.length)} berichten`;
-  append(clear(el), all.length ? all.map(e => h('div', { class: 'entry' + (e.pending ? ' pending' : '') },
-    h('div', { class: 'av' }, e.avatar || '😊'),
-    h('div', null, h('div', { class: 'hd' }, h('b', null, e.name), e.sticker ? h('span', { class: 'sticker glitter' }, e.sticker) : null, h('small', null, e.pending ? 'wordt verzonden...' : e.local ? 'alleen op dit toestel' : relDate(e.createdAt))),
-      h('p', { class: 'msg' }, e.message)))) : h('p', { class: 'muted' }, 'Nog geen berichten. Jij mag de eerste zijn!'));
-}
-
-// ---- fanmail ----------------------------------------------------------------------------------
-let fanmailWin = null;
-function renderFanmail(view, args) {
-  const F = C.fanmail;
-  const contacts = M.audio.fanmail.map(a => {
-    const meta = F.contacts[a.key] || {};
-    const name = meta.name || a.key.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    return { key: a.key, src: MEDIA + 'audio/' + a.file, duration: a.duration, name, display: meta.display || name, pm: meta.pm || '', status: meta.status || F.defaultStatus || 'online', avatar: meta.avatar || '🙂', text: meta.text, autoplay: true };
-  });
-  fanmailWin = fanmailWindow({
-    site, contacts, initialKey: args[0] || null,
-    onNavigate: (key) => { location.hash = key ? `#fanmail/${key}` : '#fanmail'; },
-    onGuestbook: (text, c) => { session.set('gb.prefill', `@${c.name}: ${text}`); location.hash = '#gastenboek'; },
-  });
-  view.append(box(F.title, [h('p', { class: 'intro muted' }, todo(F.intro)), fanmailWin.el]));
-}
-
-// ---- prijzen ----------------------------------------------------------------------------------
-function medal(kind) {
-  const col = { goud: ['#fff1a8', '#e0a800', '#8a6400'], zilver: ['#ffffff', '#b8bec8', '#6d7480'], brons: ['#f7c9a0', '#b8722e', '#6e3f12'] }[kind] || ['#fff1a8', '#e0a800', '#8a6400'];
-  return svg('0 0 64 80', `<path d="M20 0h10l6 26h-10z" fill="#e0245e"/><path d="M34 0h10l-6 26h-10z" fill="#2b5bd7"/><circle cx="32" cy="50" r="24" fill="${col[1]}" stroke="${col[2]}" stroke-width="2"/><circle cx="32" cy="50" r="18" fill="url(#g${kind})" stroke="${col[2]}" stroke-width="1"/><defs><radialGradient id="g${kind}" cx=".35" cy=".3"><stop offset="0" stop-color="${col[0]}"/><stop offset="1" stop-color="${col[1]}"/></radialGradient></defs><text x="32" y="57" text-anchor="middle" font-size="20" fill="${col[2]}">★</text>`);
-}
-function renderPrijzen(view) {
-  const A = C.awards;
-  const cards = A.items.map(a => {
-    const asset = a.photo && M.assets[a.photo];
-    const img = asset ? h('img', { src: MEDIA + 'photos/' + a.photo, alt: a.title, loading: 'lazy', onclick: () => openLightbox({ slug: a.photo.split('/')[0], photos: [{ file: a.photo.split('/')[1], key: a.title, w: asset.w, h: asset.h }] }, 0) }) : null;
-    if (a.medal === 'diploma') return h('div', { class: 'award diploma' }, h('div', null, h('h4', null, todo(a.title)), h('p', null, todo(a.reason)), h('p', { class: 'from' }, 'Uitgereikt door ', todo(a.from)), img));
-    return h('div', { class: 'award' }, medal(a.medal), h('div', null, h('h4', null, todo(a.title)), h('p', null, todo(a.reason)), h('p', { class: 'from' }, `${a.medal[0].toUpperCase() + a.medal.slice(1)} · uitgereikt door `, todo(a.from)), img));
-  });
-  const tally = ['goud', 'zilver', 'brons'].map(k => `${A.items.filter(a => a.medal === k).length}× ${k}`).join(' · ');
-  view.append(box(A.title, [h('p', { class: 'intro muted' }, todo(A.intro), ' Medaillespiegel: ', h('b', null, tally), '.'), h('div', { class: 'awards' }, cards)]));
-}
-
 // ---- ambient: MSN toasts + sparkle trail --------------------------------------------------------
 function startToasts() {
   const queue = shuffle(C.toasts.filter(t => !/TODO/.test(t.text)));
@@ -450,7 +380,7 @@ function startToasts() {
   const tick = () => {
     if (document.hidden || !queue.length) return;
     const t = queue[i++ % queue.length];
-    toast({ from: t.from, text: t.text, avatar: pick(['💌', '💖', '🎂', '😘', '🌟']), onClick: () => { location.hash = '#gastenboek'; } });
+    toast({ from: t.from, text: t.text, avatar: pick(['💌', '💖', '🎂', '😘', '🌟']), onClick: () => { location.hash = '#chat'; } });
   };
   tick(); setInterval(tick, 75000);
 }
