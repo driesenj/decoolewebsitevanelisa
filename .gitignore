@@ -5,6 +5,8 @@ content/photos/
 content/audio/
 content/video/
 content/excluded.txt
+content/.immich-sync.json
+firebase/service-account.json
 media/.tmp/
 .DS_Store
 Thumbs.db

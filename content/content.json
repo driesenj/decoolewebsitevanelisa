@@ -6,9 +6,9 @@
     "displayName": "..:: ЄŁiSΔ ::.. ♥ (8) je suis à Paris (8)",
     "personalMessage": "31 jaar en nog altijd de coolste. Ge kunt er niks aan doen.",
     "birthday": "1995-09-19",
-    "city": "TODO-stad",
+    "city": "Gent (<3 <3)",
     "location": "Parijs 🗼",
-    "msnEmail": "elisa_xxx@hotmail.com",
+    "msnEmail": "elisake750@msn.com",
     "msnPassword": "elisaiscool",
     "webmaster": "Joep",
     "fanclub": "De Officiële Elisa Fanclub",
@@ -18,18 +18,30 @@
     "aliases": ["elisa"],
     "_aliases_help": "Wie zich in Messenger aanmeldt met msnEmail, een alias of 'Elisa' is Elisa: mag overal posten + verjaardagsmodus."
   },
+  "splash": {
+    "_help": "De welkomstpagina met de ENTER-knop. Na ENTER start het lied en blijft het herhalen.",
+    "title": "Welkom op de coole site van Elisa",
+    "sub": "~*~ de officiële fanpagina ~*~",
+    "button": "ENTER",
+    "hint": "(8) zet je geluid aan, het lied start vanzelf (8)"
+  },
   "kids": [
     {
-      "name": "de grote",
+      "name": "Floflo",
       "age": "5"
     },
     {
-      "name": "de kleine",
+      "name": "Luna",
       "age": "1,5"
     }
   ],
+  "immich": {
+    "_help": "npm run sync haalt alles uit Immich (adres + API-sleutel in .env). Fotoalbums: het Immich-album met dezelfde naam als de titel of sleutel hieronder, of zet \"immich\": \"Naam in Immich\" bij het album. vlog/msn = de Immich-albums voor de vlogs en de Messenger-berichten; bestandsnaam daar = de beschrijving van de foto/video in Immich (bv. 'Tante An' -> tante-an).",
+    "vlog": "Vlog",
+    "msn": "MSN"
+  },
   "photoRules": {
-    "_help": "Foto's met een EXIF-datum in dit venster worden overgeslagen, behalve in albums met allowAllDates: true (trouwfeest). Overgeslagen foto's staan in content/excluded.txt.",
+    "_help": "Foto's met een EXIF-datum in dit venster worden overgeslagen, behalve in albums met allowAllDates: true. Overgeslagen foto's staan in content/excluded.txt.",
     "bannedFrom": "2023-06-01",
     "bannedTo": "2025-10-01"
   },
@@ -40,18 +52,18 @@
       ["Leeftijd", "{age} jaar (voelt zich 17)"],
       ["Woonplaats", "{city}"],
       ["Momenteel in", "Parijs 🗼 (zonder ons 😢)"],
-      ["Relatie", "bezet ♥ (met de webmaster)"],
+      ["Relatie", "bezet ♥ (met poepie)"],
       ["Kindjes", "2: {kid1} ({kid1age}) en {kid2} ({kid2age}), allebei fan"],
       ["Sterrenbeeld", "Maagd (klopt volledig)"],
-      ["Lievelingseten", "TODO"],
-      ["Lievelingsdrank", "TODO"],
-      ["Guilty pleasure", "TODO"],
-      ["Motto", "TODO"],
+      ["Lievelingseten", "pastaaaaa"],
+      ["Lievelingsdrank", "Een grote kuipe Aperol"],
+      ["Guilty pleasure", "de muziek van mijn kindjes"],
+      ["Motto", "goeleven!!!!"],
       ["MSN", "{msnEmail}"],
-      ["Fanclub opgericht", "TODO (jaar dat jullie elkaar leerden kennen)"]
+      ["Fanclub opgericht", "2017"]
     ],
-    "loves": ["koffie ☕", "lang uitslapen (in theorie)", "Parijs 🗼", "haar kindjes (meestal)", "de webmaster (altijd)", "TODO"],
-    "hates": ["vroeg opstaan", "een lege koffiepot", "als de webmaster de afwas 'seffens' doet", "TODO"],
+    "loves": ["koffie", "kindjes", "poepie", "mijn BFFEs", "mijn huisje", "slapen"],
+    "hates": ["geween", "te laat zijn", "honger"],
     "stats": {
       "title": "Elisa's stats volgens de kindjes",
       "groups": [
@@ -81,36 +93,12 @@
       "title": "Mijn muziek (8)",
       "nowPlaying": "lied",
       "nowPlayingLabel": "Nu aan het spelen: het verjaardagslied (live opgenomen door de kindjes)",
-      "top": ["TODO top 5 van 2008 (bv. Milk Inc., Kate Ryan, Natalia, Rihanna, Timbaland)"]
-    },
-    "links": {
-      "title": "Mijn favoriete links",
-      "items": [
-        {
-          "title": "Messenger!!!",
-          "url": "#msn",
-          "desc": "stuur iets liefs (of iets zots)"
-        },
-        {
-          "title": "Hoe geraak ik van Parijs terug naar huis",
-          "url": "https://www.google.com/maps/dir/Paris/{city}",
-          "desc": "voor het geval dat"
-        },
-        {
-          "title": "Croissant-calculator",
-          "url": "#profiel",
-          "desc": "1 croissant = 0 calorieën als je op reis bent (wetenschappelijk bewezen)"
-        },
-        {
-          "title": "Officiële fanclub-merchandise",
-          "url": "#fotos",
-          "desc": "binnenkort (sinds 2019)"
-        },
-        {
-          "title": "TODO inside joke",
-          "url": "#",
-          "desc": "TODO"
-        }
+      "top": [
+        "Melk & honing - Alois & VLB (feat. Brihang)",
+        "Atlas - Pommelien Thijs",
+        "'k Wou da'k het kon zeggen - Brihang",
+        "Who by the fire - Leonard Cohen",
+        "S P E Y S I D E - Bon Iver"
       ]
     }
   },
@@ -120,42 +108,60 @@
     "options": ["Ja", "Zeker", "Absoluut", "Ja (maar dat wist ik al)"]
   },
   "albums": {
-    "_help": "Sleutel = mapnaam in content/photos/. captions: key -> tekst. cover: key van de coverfoto. sort: 'date' om op EXIF-datum te sorteren. order: lijst van keys voor manuele volgorde.",
-    "toen-ik-klein-was": {
-      "title": "toen ik klein was :p",
-      "desc": "Bewijsmateriaal dat {name} ooit kleiner was dan {kid1}.",
-      "sort": "date",
-      "captions": {
-        "img_1000": "TODO onderschrift"
-      }
-    },
-    "trouwfeest": {
-      "title": "trouwfeest ♥♥♥",
-      "desc": "De dag dat de webmaster de lotto won.",
+    "_help": "Sleutel = mapnaam in content/photos/. Volgorde hier = volgorde op de site. desc: tekstje boven het album. captions: key -> tekst. cover: key van de coverfoto. sort: 'date' om op EXIF-datum te sorteren. order: lijst van keys voor manuele volgorde. allowAllDates: true negeert photoRules voor dat album.",
+    "spermatties": {
+      "title": "Spermatties",
       "allowAllDates": true
     },
-    "mijn-lief-en-ik": {
-      "title": "mijn lief & ik ♥",
-      "desc": "Hij is braaf, hij mag blijven."
+    "fun-with-the-fam": {
+      "title": "Fun with the Fam",
+      "allowAllDates": true
     },
-    "de-kindjes": {
-      "title": "de kindjes ♥",
-      "desc": "De twee kleinste fans (en de luidste).",
-      "sort": "date"
+    "turfmollen": {
+      "title": "Turfmollen",
+      "allowAllDates": true
     },
-    "random": {
-      "title": "random :p",
-      "desc": "Foto's die nergens anders pasten maar te goed zijn om weg te laten."
+    "de-mansion": {
+      "title": "The Mansion",
+      "allowAllDates": true
     },
-    "parijs": {
-      "title": "parijs 🗼",
-      "desc": "Hier komen de foto's van Parijs. {name}, dit is een hint."
+    "sgattie": {
+      "title": "Sgattie",
+      "allowAllDates": true
+    },
+    "vinoisserie": {
+      "title": "Vinoiserie",
+      "allowAllDates": true
+    },
+    "vacay": {
+      "title": "Vacay",
+      "allowAllDates": true
+    },
+    "ons-huisje": {
+      "title": "Ons huisje",
+      "allowAllDates": true
+    },
+    "mijn-kjoeties": {
+      "title": "Mijn kjoeties <3<3",
+      "allowAllDates": true
+    },
+    "bizonder": {
+      "title": "Bizondere vriendjes",
+      "allowAllDates": true
+    },
+    "back2school": {
+      "title": "Back2School",
+      "allowAllDates": true
+    },
+    "gore": {
+      "title": "Gore",
+      "allowAllDates": true
     }
   },
   "videos": {
     "title": "Elisa's webcam",
     "intro": "Lang voor TikTok had {name} al haar eigen vlogs. De fanclub heeft de archieven opengegooid. Kijken op eigen risico.",
-    "defaultTitle": "Vlog",
+    "defaultTitle": "PVO Vlog",
     "defaultDesc": "Een echte {name}-vlog uit het archief. Kijkcijfers: 1.000.001.",
     "items": {
       "vlog-demo-1": {
@@ -179,7 +185,7 @@
       "text": "mamamamamama"
     },
     {
-      "from": "de webmaster",
+      "from": "poepie",
       "text": "we missen u sgat x"
     },
     {
@@ -199,7 +205,7 @@
       "text": "Je bent bezoeker nr. 1.000.001. Proficiat!"
     },
     {
-      "from": "de webmaster",
+      "from": "poepie",
       "text": "TODO nog meer complimentjes"
     }
   ],
@@ -234,14 +240,6 @@
         "status": "away",
         "avatar": "👴",
         "aliases": ["opa", "bompa"]
-      },
-      "tante-an": {
-        "name": "Tante An",
-        "display": "..:: An ::.. ♥ bff 4 ever ♥",
-        "pm": "TODO",
-        "status": "online",
-        "avatar": "💁‍♀️",
-        "aliases": ["an", "tante an", "tanteanke"]
       },
       "de-kindjes": {
         "name": "De kindjes",

@@ -9,6 +9,8 @@
     "build:video": "node scripts/build-video.mjs",
     "demo": "node scripts/gen-demo.mjs",
     "dev": "node scripts/serve.mjs",
+    "sync": "node scripts/sync-immich.mjs",
+    "chat": "node scripts/chat.mjs",
     "og": "node scripts/gen-og.mjs"
   },
   "devDependencies": {

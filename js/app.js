@@ -8,8 +8,9 @@ import { createMessenger, toast, xpTitle, nudge } from './msn.js';
 import { createDock } from './dock.js';
 import { createBonzi } from './bonzi.js';
 
-const TABS = [['profiel', 'Profiel'], ['fotos', "Foto's"], ['vlog', 'Vlog']];
+const TABS = [['profiel', 'Profiel'], ['fotos', "Foto's"], ['vlog', 'PVO Vlog']];
 const MEDIA = 'media/';
+const mediaUrl = (file, v) => MEDIA + file + (v ? '?v=' + v : '');
 let C, M, site, vars;           // content, manifest, site block, template vars
 const live = { messages: [], visitors: [], likes: {}, votes: [] };
 let messagesLoaded = false;
@@ -44,6 +45,7 @@ async function boot() {
   await dbReady;
   startLive();
   route();
+  await splash();          // the front door: ENTER starts the song and, being a tap, unlocks sound for the rest of the visit
 
   if (hasMouse) sparkles();
   setTimeout(startToasts, 40000);
@@ -80,12 +82,12 @@ function buildContacts() {
   return [...keys].sort((a, b) => { const ia = order.indexOf(a), ib = order.indexOf(b); return (ia < 0 ? 1e9 : ia) - (ib < 0 ? 1e9 : ib); }).map(key => {
     const meta = cfg[key] || {};
     const a = M.audio.fanmail.find(x => x.key === key), v = M.videoFanmail.find(x => x.key === key);
-    const name = meta.name || key.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const name = meta.name || a?.name || v?.name || key.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     return {
       key, name, display: meta.display || name, pm: meta.pm || '', status: meta.status || C.msn.defaultStatus || 'online', avatar: meta.avatar || '🙂',
       aliases: meta.aliases || [], text: meta.text,
-      audio: a ? { src: MEDIA + 'audio/' + a.file, duration: a.duration } : null,
-      video: v ? { src: MEDIA + 'video/' + v.file, poster: MEDIA + 'video/' + v.poster, duration: v.duration, w: v.w, h: v.h } : null,
+      audio: a ? { src: mediaUrl('audio/' + a.file, a.v), duration: a.duration } : null,
+      video: v ? { src: mediaUrl('video/' + v.file, v.v), poster: mediaUrl('video/' + v.poster, v.v), duration: v.duration, w: v.w, h: v.h } : null,
     };
   });
 }
@@ -99,14 +101,14 @@ function setupDesktop() {
     onSend: ({ name, message, room }) => db.addMessage({ name, message, room }),
     onSignIn: (name) => {
       const welkom = M.audio.singles?.welkom;
-      if (welkom && !store.get('welkom.done')) { store.set('welkom.done', true); setTimeout(() => player.play(MEDIA + 'audio/' + welkom.file), 300); }
+      if (welkom && !store.get('welkom.done')) { store.set('welkom.done', true); setTimeout(() => player.play(mediaUrl('audio/' + welkom.file, welkom.v)), 300); }
       if (isElisa(name) && !session.get('partyDone')) setTimeout(party, 600);
       else toast({ from: null, avatar: '🦋', text: h('span', null, h('b', null, displayNameFor(name)), ' heeft zich zojuist aangemeld.') });
     },
     onOpenChange: (open, unread) => { dock.setActive('msn', open); dock.badge('msn', unread); if (open) dock.flash('msn', false); },
   });
   dock.add({ id: 'msn', icon: '🦋', label: 'Windows Live Messenger', short: 'Messenger', onClick: () => (msn.isOpen ? msn.close() : openMsn()) });
-  bonzi = createBonzi({ cfg: C.bonzi, onSing: () => { const song = M.audio.singles?.lied; if (song) player.play(MEDIA + 'audio/' + song.file); } });
+  bonzi = createBonzi({ cfg: C.bonzi, onSing: () => { const src = songSrc(); if (src && !(player.src === src && player.playing)) player.play(src); } });
   bonzi.onChange = (shown) => dock.setActive('bonzi', shown);
   dock.add({ id: 'bonzi', icon: '🦍', label: C.bonzi.name, short: 'Bonzi', onClick: () => { store.set('bonzi.seen', true); bonzi.toggle(); } });
   // back button closes the Messenger window on phones
@@ -125,7 +127,7 @@ function renderShell() {
   const card = $('#profile-card');
   const sparks = [[-10, -8, 0], [104, -12, .3], [118, 60, .6], [96, 112, .15], [-14, 100, .45], [50, -18, .8]].map(([x, y, d]) =>
     h('span', { class: 'spark', style: { left: x + 'px', top: y + 'px', animationDelay: d + 's' } }, '✦'));
-  const avatarSrc = M.assets[site.avatar] ? MEDIA + 'photos/' + site.avatar : null;
+  const avatarSrc = M.assets[site.avatar] ? mediaUrl('photos/' + site.avatar, M.assets[site.avatar].v) : null;
   clear(card).append(
     h('div', { class: 'avatar' }, avatarSrc ? h('img', { src: avatarSrc, alt: site.name }) : h('div', { class: 'noavatar' }, '💖'), ...sparks),
     h('div', { class: 'who' },
@@ -251,7 +253,6 @@ function renderProfiel(view) {
     box('Wie bezocht mijn profiel', h('div', { id: 'visitors' })),
     box('Poll', h('div', { id: 'poll', class: 'poll' })),
     musicBox(),
-    box(p.links.title, h('ul', { class: 'links' }, p.links.items.map(l => h('li', null, h('a', { href: l.url, target: l.url.startsWith('#') ? null : '_blank', rel: 'noopener' }, todo(l.title)), h('small', null, todo(l.desc)))))),
   );
   view.append(h('div', { class: 'cols' }, main, side));
   renderVisitors(); renderPoll();
@@ -268,7 +269,7 @@ function renderVisitors() {
   if (!list.length && me) list.push({ name: displayNameFor(me), createdAt: new Date() });
   if (!list.length) { el.append(h('p', { class: 'muted' }, 'Nog niemand. Meld je aan bij Messenger (rechtsonder) en je staat hier!')); return; }
   el.append(h('div', { class: 'visitors' }, list.map(v => h('span', { class: 'v' }, h('i', null, avatarFor(v.name)), v.name, h('small', null, ' ', relDate(v.createdAt).replace(' om', ','))))),
-    h('p', { class: 'small muted', style: { margin: '6px 0 0' } }, `${fmtNum(live.visitors.length)} recente bezoeken · de webmaster (1.000.000 keer)`));
+    h('p', { class: 'small muted', style: { margin: '6px 0 0' } }, `${fmtNum(live.visitors.length)} recente bezoeken · poepie (1.000.000 keer)`));
 }
 
 function renderPoll() {
@@ -292,13 +293,48 @@ function renderPoll() {
   el.append(h('p', { class: 'small muted' }, `${fmtNum(total)} stemmen · Conclusie: ja. Jij stemde "${voted}".`));
 }
 
+const songSrc = () => { const song = M.audio.singles?.[C.profile.music.nowPlaying]; return song ? mediaUrl('audio/' + song.file, song.v) : null; };
 function musicBox() {
-  const mu = C.profile.music;
-  const song = M.audio.singles?.[mu.nowPlaying];
-  const np = h('div', { class: 'np paused' }, h('span', { class: 'eq' }, h('i'), h('i'), h('i'), h('i')), h('span', null, song ? mu.nowPlayingLabel : 'Nog geen lied. Zet content/audio/lied.* klaar.'),
-    song ? h('button', { class: 'btn small', onclick: () => player.play(MEDIA + 'audio/' + song.file) }, '▶') : null);
-  if (song) player.onChange((src, playing) => { if (!np.isConnected) return; const on = src === MEDIA + 'audio/' + song.file && playing; np.classList.toggle('paused', !on); np.querySelector('button').textContent = on ? '❚❚' : '▶'; });
+  const mu = C.profile.music, src = songSrc();
+  const np = h('div', { class: 'np paused' }, h('span', { class: 'eq' }, h('i'), h('i'), h('i'), h('i')), h('span', null, src ? mu.nowPlayingLabel : 'Nog geen lied. Zet content/audio/lied.* klaar.'),
+    src ? h('button', { class: 'btn small', onclick: () => player.play(src) }, '▶') : null);
+  if (src) {
+    const sync = (cur, playing) => { const on = cur === src && playing; np.classList.toggle('paused', !on); np.querySelector('button').textContent = on ? '❚❚' : '▶'; };
+    sync(player.src, player.playing);
+    const off = player.onChange((cur, playing) => { if (!np.isConnected) return off(); sync(cur, playing); });
+  }
   return box(mu.title, h('div', { class: 'music' }, np, h('ol', null, mu.top.map(t => h('li', null, todo(t))))));
+}
+// ---- splash: "Welkom op de coole site van Elisa" + ENTER ------------------------------------------------
+// Every visit starts here, like every self-respecting site in 2008. The ENTER tap is what browsers need before
+// they allow sound, so this is where the song starts (and keeps looping) and the sound effects get unlocked.
+function splash() {
+  const s = C.splash || {};
+  const src = songSrc();
+  if (src) player.setBgm(src, { loop: true });
+  return new Promise(resolve => {
+    const go = () => {
+      document.removeEventListener('keydown', onKey);
+      sfx.unlock();
+      if (src) player.play(src);
+      document.body.classList.remove('splash-open');
+      el.classList.add('out'); setTimeout(() => el.remove(), 600);
+      window.scrollTo(0, 0);
+      resolve();
+    };
+    const onKey = (e) => { if (e.key === 'Enter') { e.preventDefault(); go(); } };
+    const btn = h('button', { class: 'btn pink enter', onclick: go }, s.button || 'ENTER');
+    const el = h('div', { id: 'splash' }, h('div', { class: 'inner' },
+      h('div', { class: 'deco' }, '~*~ ✦ ~*~'),
+      h('h1', { class: 'glitter' }, s.title || `Welkom op de coole site van ${site.name}`),
+      s.sub ? h('p', { class: 'sub' }, todo(s.sub)) : null,
+      btn,
+      s.hint ? h('p', { class: 'hint' }, todo(s.hint)) : null));
+    document.body.classList.add('splash-open');
+    document.body.append(el);
+    document.addEventListener('keydown', onKey);
+    btn.focus();
+  });
 }
 
 // ---- foto's -----------------------------------------------------------------------------------
@@ -316,12 +352,15 @@ function renderFotos(view, args, sameTab) {
 }
 function renderAlbumList(view) {
   const known = new Set(M.albums.map(a => a.slug));
-  const planned = Object.keys(C.albums).filter(s => !s.startsWith('_') && !known.has(s));
+  const order = Object.keys(C.albums).filter(s => !s.startsWith('_'));
+  const planned = order.filter(s => !known.has(s));
+  const rank = (a) => { const i = order.indexOf(a.slug); return i < 0 ? 1e9 : i; };
+  const albums = [...M.albums].sort((a, b) => rank(a) - rank(b));
   view.append(box("Mijn foto's", [
     h('p', { class: 'intro muted' }, `${M.albums.length} albums · ${M.albums.reduce((n, a) => n + a.count, 0)} foto's · klik op een album, klik op een foto voor groot, geef hartjes (L)`),
     h('div', { class: 'albums' },
-      M.albums.map(a => h('a', { class: 'album', href: `#fotos/${a.slug}` },
-        h('div', { class: 'cov', style: a.cover ? { backgroundImage: `url("${MEDIA}photos/${a.slug}/thumbs/${a.cover}")` } : null }),
+      albums.map(a => h('a', { class: 'album', href: `#fotos/${a.slug}` },
+        h('div', { class: 'cov', style: a.cover ? { backgroundImage: `url("${mediaUrl(`photos/${a.slug}/thumbs/${a.cover}`, a.photos.find(p => p.file === a.cover)?.v)}")` } : null }),
         h('span', { class: 't' }, todo(albumCfg(a.slug).title || a.slug)), h('span', { class: 'c' }, `${a.count} foto's`))),
       planned.map(s => h('div', { class: 'album empty', title: 'nog geen foto\'s in content/photos/' + s }, h('div', { class: 'cov' }, '📷'), h('span', { class: 't' }, albumCfg(s).title || s), h('span', { class: 'c' }, 'binnenkort')))),
   ]));
@@ -331,7 +370,7 @@ function renderAlbum(view, album) {
   view.append(box(h('a', { href: '#fotos' }, "◀ Foto's"), [
     h('div', { class: 'album-head' }, h('h4', { class: 'glitter' }, cfg.title || album.slug), h('span', { class: 'muted' }, `${album.count} foto's`), cfg.desc ? h('p', { class: 'desc' }, todo(cfg.desc)) : null),
     h('div', { class: 'grid' }, album.photos.map((p, i) => h('div', { class: 'ph', onclick: () => { location.hash = `#fotos/${album.slug}/${i}`; } },
-      h('img', { src: `${MEDIA}photos/${album.slug}/thumbs/${p.file}`, alt: cfg.captions?.[p.key] || '', loading: 'lazy', width: p.tw, height: p.th }),
+      h('img', { src: mediaUrl(`photos/${album.slug}/thumbs/${p.file}`, p.v), alt: cfg.captions?.[p.key] || '', loading: 'lazy', width: p.tw, height: p.th }),
       h('span', { class: 'lk', dataset: { like: photoId(album.slug, p.key) } })))),
   ]));
   refreshLikes();
@@ -345,7 +384,7 @@ const lb = { album: null, idx: -1, el: document.getElementById('lightbox') };
 function openLightbox(album, idx) {
   const p = album.photos[idx], cfg = albumCfg(album.slug), id = photoId(album.slug, p.key);
   lb.album = album; lb.idx = idx;
-  const img = h('img', { src: `${MEDIA}photos/${album.slug}/${p.file}`, alt: cfg.captions?.[p.key] || '', width: p.w, height: p.h });
+  const img = h('img', { src: mediaUrl(`photos/${album.slug}/${p.file}`, p.v), alt: cfg.captions?.[p.key] || '', width: p.w, height: p.h });
   const liked = store.get('liked.' + id, false);
   const heart = h('button', { class: 'heart' + (liked ? ' on' : ''), onclick: async () => {
     heart.classList.add('on', 'pop'); store.set('liked.' + id, true); live.likes[id] = (live.likes[id] || 0) + 1; heart.textContent = `♥ ${live.likes[id]}`; sfx.pop(); refreshLikes();
@@ -358,7 +397,7 @@ function openLightbox(album, idx) {
     h('div', { class: 'cap' }, h('div', { class: 'txt' }, todo(cfg.captions?.[p.key] || ''), p.date ? h('div', { class: 'small muted' }, fmtDate(p.date)) : null), heart),
   );
   lb.el.hidden = false; document.body.style.overflow = 'hidden';
-  [1, -1].forEach(d => { const q = album.photos[(idx + d + album.photos.length) % album.photos.length]; new Image().src = `${MEDIA}photos/${album.slug}/${q.file}`; });
+  [1, -1].forEach(d => { const q = album.photos[(idx + d + album.photos.length) % album.photos.length]; new Image().src = mediaUrl(`photos/${album.slug}/${q.file}`, q.v); });
   lb.go = go;
 }
 function closeLightbox(navigate = true) {
@@ -378,9 +417,10 @@ function renderVlog(view) {
   const V = C.videos;
   const cards = M.videos.map((v, i) => {
     const meta = V.items[v.key] || {};
-    const video = h('video', { controls: true, playsinline: true, preload: 'none', poster: MEDIA + 'video/' + v.poster, src: MEDIA + 'video/' + v.file });
+    const video = h('video', { controls: true, playsinline: true, preload: 'none', poster: mediaUrl('video/' + v.poster, v.v), src: mediaUrl('video/' + v.file, v.v) });
     video.addEventListener('play', () => { player.stop(); document.querySelectorAll('video').forEach(o => { if (o !== video) o.pause(); }); });
-    return h('div', { class: 'xp-win webcam' }, xpTitle(`Webcam van ${site.name}`, { icon: '🎥' }),
+    video.addEventListener('ended', () => player.resume());
+    return h('div', { class: 'xp-win webcam' + (v.h > v.w ? ' portrait' : '') }, xpTitle(`Webcam van ${site.name}`, { icon: '🎥' }),
       h('div', { class: 'vbody' }, video),
       h('div', { class: 'vfoot' }, h('b', null, todo(meta.title || `${V.defaultTitle} #${i + 1}`)), h('small', null, todo(meta.desc || V.defaultDesc), ` · ${fmtDuration(v.duration)}`)));
   });

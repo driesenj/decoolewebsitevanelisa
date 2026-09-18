@@ -6,7 +6,7 @@ import fs from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import sharp from 'sharp';
 import ffmpegPath from 'ffmpeg-static';
-import { CONTENT, ensureDir, exists, log } from './lib.mjs';
+import { CONTENT, ensureDir, exists, log, readContent } from './lib.mjs';
 
 const P = path.join(CONTENT, 'photos');
 const A = path.join(CONTENT, 'audio');
@@ -32,18 +32,16 @@ async function placeholder(file, label, { w = 1200, h = 900, date, seed = 0 } = 
   await img.toFile(file);
 }
 
-const albums = {
-  'toen-ik-klein-was': { n: 7, dates: ['1996:06:01 12:00:00', '1999:08:14 12:00:00', '2003:05:01 12:00:00', '2007:07:21 12:00:00', '2009:03:03 12:00:00', '2011:12:24 12:00:00', '2013:09:19 12:00:00'] },
-  'trouwfeest': { n: 6, dates: Array(6).fill('2024:06:15 14:00:00') },   // inside the banned window, but allowAllDates in content.json
-  'de-kindjes': { n: 8, dates: ['2021:05:01 12:00:00', '2022:01:01 12:00:00', '2022:08:01 12:00:00', '2025:11:01 12:00:00', '2026:01:01 12:00:00', '2026:03:01 12:00:00', '2026:06:01 12:00:00', '2026:08:01 12:00:00'] },
-  'random': { n: 6, dates: ['2019:02:02 12:00:00', '2024:04:04 12:00:00', '2020:03:03 12:00:00', null, '2026:05:05 12:00:00', '2018:07:07 12:00:00'] }, // #2 should be excluded by the date rule
-};
+// one folder per album in content.json, 4-8 photos each; the 2024 date sits inside the photoRules window and
+// should be excluded (unless the album has allowAllDates), the null one has no EXIF date at all
+const slugs = Object.keys((await readContent()).albums || {}).filter(k => !k.startsWith('_'));
+const dates = ['2019:02:02 12:00:00', '2024:04:04 12:00:00', '2020:03:03 12:00:00', null, '2026:05:05 12:00:00', '2018:07:07 12:00:00', '2021:05:01 12:00:00', '1999:08:14 12:00:00'];
 let i = 0;
-for (const [slug, cfg] of Object.entries(albums)) {
+for (const [a, slug] of slugs.entries()) {
   await ensureDir(path.join(P, slug));
-  for (let n = 1; n <= cfg.n; n++, i++) {
+  for (let n = 1; n <= 4 + (a % 5); n++, i++) {
     const portrait = n % 3 === 0;
-    await placeholder(path.join(P, slug, `IMG_${1000 + i}.jpg`), `${slug} #${n}`, { w: portrait ? 900 : 1200, h: portrait ? 1200 : 900, date: cfg.dates[n - 1], seed: i });
+    await placeholder(path.join(P, slug, `IMG_${1000 + i}.jpg`), `${slug} #${n}`, { w: portrait ? 900 : 1200, h: portrait ? 1200 : 900, date: dates[n - 1], seed: i });
   }
 }
 await ensureDir(path.join(P, '_site'));
@@ -68,7 +66,6 @@ await ensureDir(path.join(A, 'fanmail'));
 const fanmail = {
   oma: 'Dag Elisa, hier is oma. Een dikke proficiat met je verjaardag. Geniet van Parijs en eet een croissant voor mij.',
   opa: 'Elisa, opa hier. Proficiat. Ik heb dit bericht drie keer moeten inspreken. Dag.',
-  'tante-an': 'Hey schat! Gelukkige verjaardag! Ik mis je! Kusjes uit het verre Vlaanderen!',
   'de-kindjes': 'Mama! Gelukkige verjaardag! Kom je snel terug? Wij hebben een taart gemaakt en papa heeft ze laten vallen.',
   'de-webmaster': 'Dit is een testbericht van de webmaster. Als je dit hoort werkt alles. Ik zie u graag.',
 };
@@ -86,10 +83,10 @@ for (const [n, size] of [[1, '540x960'], [2, '960x540'], [3, '540x960']]) {
     '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-shortest', f], { encoding: 'utf8' });
   if (r.status !== 0) throw new Error(r.stderr);
 }
-// one video message from a fan (Tante An has both a voice and a video message)
+// one video message from a fan (Oma has both a voice and a video message)
 await ensureDir(path.join(V, 'fanmail'));
 {
-  const f = path.join(V, 'fanmail', 'tante-an.mp4');
+  const f = path.join(V, 'fanmail', 'oma.mp4');
   if (!await exists(f)) {
     const r = spawnSync(ffmpegPath, ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'smptebars=duration=5:size=540x960:rate=25', '-f', 'lavfi', '-i', 'sine=frequency=330:duration=5',
       '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-shortest', f], { encoding: 'utf8' });

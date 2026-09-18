@@ -301,5 +301,6 @@ function videoClip(c) {
   const v = c.video;
   const video = h('video', { controls: true, playsinline: true, preload: 'metadata', poster: v.poster, src: v.src });
   video.addEventListener('play', () => { player.stop(); document.querySelectorAll('video').forEach(o => { if (o !== video) o.pause(); }); });
+  video.addEventListener('ended', () => player.resume());
   return h('div', { class: 'vclip' + (v.h > v.w ? ' portrait' : '') }, h('div', { class: 'vclip-title' }, `Webcam van ${c.name}`), video);
 }
