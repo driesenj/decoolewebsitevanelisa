@@ -74,20 +74,30 @@ function avatarFor(name) {
   let x = 7; for (const ch of String(name || '').toLowerCase()) x = (x * 31 + ch.codePointAt(0)) >>> 0;
   return C.avatars[x % C.avatars.length];
 }
-// one contact per fan with a voice and/or video message; order = order in content.json, extras after
+// One contact per fan, with all of their clips in one conversation. Files that only differ in a trailing number belong
+// to the same fan: "Fatou.mp4", "Fatou 2.mp4", "Fatou (3).mp4" (or the "Fatou-2.mp4" the Immich sync makes for a repeated
+// description) -> contact "Fatou" with three videos. Order of contacts = order in content.json, extras after.
+const person = (key) => key.replace(/[-_ ]+\(?\d+\)?$/, '') || key;
+const personName = (name) => name.replace(/[\s_-]+\(?\d+\)?$/, '') || name;
 function buildContacts() {
   const cfg = C.msn.contacts;
-  const keys = new Set([...M.audio.fanmail.map(a => a.key), ...M.videoFanmail.map(v => v.key)]);
+  const groups = new Map();      // person key -> { audios, videos } in file order
+  const groupOf = (key) => { const k = person(key); if (!groups.has(k)) groups.set(k, { audios: [], videos: [] }); return groups.get(k); };
+  for (const a of M.audio.fanmail) groupOf(a.key).audios.push(a);
+  for (const v of M.videoFanmail) groupOf(v.key).videos.push(v);
+  // within a fan: the plain file first, then 2, 3, ... (natural file order would put "Fatou 2" before "Fatou")
+  const seq = (key) => +(key.match(/[-_ ]+\(?(\d+)\)?$/)?.[1] || 0);
+  for (const g of groups.values()) for (const list of [g.audios, g.videos]) list.sort((a, b) => seq(a.key) - seq(b.key) || a.key.localeCompare(b.key));
   const order = Object.keys(cfg).filter(k => !k.startsWith('_'));
-  return [...keys].sort((a, b) => { const ia = order.indexOf(a), ib = order.indexOf(b); return (ia < 0 ? 1e9 : ia) - (ib < 0 ? 1e9 : ib); }).map(key => {
-    const meta = cfg[key] || {};
-    const a = M.audio.fanmail.find(x => x.key === key), v = M.videoFanmail.find(x => x.key === key);
-    const name = meta.name || a?.name || v?.name || key.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  return [...groups.keys()].sort((a, b) => { const ia = order.indexOf(a), ib = order.indexOf(b); return (ia < 0 ? 1e9 : ia) - (ib < 0 ? 1e9 : ib); }).map(key => {
+    const meta = cfg[key] || {}, g = groups.get(key);
+    const first = g.audios[0] || g.videos[0];
+    const name = meta.name || (first?.name && personName(first.name)) || key.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     return {
       key, name, display: meta.display || name, pm: meta.pm || '', status: meta.status || C.msn.defaultStatus || 'online', avatar: meta.avatar || '🙂',
       aliases: meta.aliases || [], text: meta.text,
-      audio: a ? { src: mediaUrl('audio/' + a.file, a.v), duration: a.duration } : null,
-      video: v ? { src: mediaUrl('video/' + v.file, v.v), poster: mediaUrl('video/' + v.poster, v.v), duration: v.duration, w: v.w, h: v.h } : null,
+      audios: g.audios.map(a => ({ src: mediaUrl('audio/' + a.file, a.v), duration: a.duration })),
+      videos: g.videos.map(v => ({ src: mediaUrl('video/' + v.file, v.v), poster: mediaUrl('video/' + v.poster, v.v), duration: v.duration, w: v.w, h: v.h })),
     };
   });
 }

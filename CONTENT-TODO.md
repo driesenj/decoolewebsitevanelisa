@@ -39,6 +39,8 @@ Let op de fotoregel: EXIF-datum tussen 2023-06-01 en 2025-10-01 wordt overgeslag
       (sleutel = kleine letters met streepjes: "Tante Mieke.ogg" -> `tante-mieke`) met MSN-displaynaam, pm, status, emoji en
       `aliases` (namen waarmee die persoon zich mag aanmelden om in zijn/haar privégesprek te typen). Volgorde in Messenger = volgorde in `msn.contacts`.
       De oude demo-contacten (oma, opa, de-kindjes, de-webmaster) staan er nog als voorbeeld; ze doen niets zolang er geen bestand met die naam is.
+      Meerdere clips van één fan: `Fatou.mp4`, `Fatou 2.mp4`, `Fatou 3.mp4` (of in Immich dezelfde beschrijving) = één gesprek.
+- [ ] De `VID-20260919-WA00xx.mp4`-berichten in Messenger een naam geven: bestand hernoemen in `content/video/fanmail/` (of de beschrijving in Immich zetten) en `npm run sync`
 
 ## Video (content/video/)
 - [ ] vlogs erin droppen; titels in `videos.items` (sleutel = bestandsnaam zonder extensie)

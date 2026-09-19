@@ -36,7 +36,10 @@ bestandsnaam in kleine letters zonder extensie: `IMG_1234.HEIC` -> `img_1234`, `
     (geen wachtwoord). Links de gesprekken: het **groepsgesprek** (enkel getypte berichten, iedereen mag posten) en één
     **privégesprek per fan** met een spraak-/videobericht (`content/audio/fanmail/`, `content/video/fanmail/`), waarin dat
     bericht al gepost staat. De naam van de fan = de bestandsnaam zoals je die typt ("Tante Mieke.ogg" -> Tante Mieke);
-    `msn.contacts` (sleutel `tante-mieke`) is er voor de MSN-displaynaam, het pm'tje, de status en aliassen. In een privégesprek kan enkel die persoon zelf typen (aangemeld met de sleutel, de naam of een
+    `msn.contacts` (sleutel `tante-mieke`) is er voor de MSN-displaynaam, het pm'tje, de status en aliassen.
+    **Meerdere clips van één fan** in één gesprek: zelfde naam met een volgnummer erachter — `Fatou.mp4`, `Fatou 2.mp4`,
+    `Fatou (3).mp4` (of `Fatou-2.mp4`, wat de Immich-sync maakt bij een herhaalde beschrijving). Spraakclips eerst, dan
+    video's, op volgnummer. Een spraakclip en een video met dezelfde naam zitten sowieso al samen in één gesprek. In een privégesprek kan enkel die persoon zelf typen (aangemeld met de sleutel, de naam of een
     alias uit `msn.contacts`) — of Elisa (aangemeld met `site.msnEmail`, "Elisa" of een alias uit `site.aliases`).
     Dat is een client-side check, geen beveiliging. Nieuwe berichten: MSN-ding + popup vanuit de dock, teller op de knop,
     knop knippert oranje. `#msn` of `#msn/oma` in de URL opent het venster meteen.
@@ -93,6 +96,7 @@ Wat er gesynct wordt:
 - **Namen in Vlog en MSN** komen van de *beschrijving* van de video in Immich: beschrijving "Tante An" -> `Tante An.mov` ->
   contact Tante An (sleutel `tante-an` in `msn.contacts`; zelfde sleutel als haar spraakclip = één gesprek met beide). Zonder
   beschrijving wordt de originele bestandsnaam gebruikt (`VID-20260918-WA0010.mp4`). Bij vlogs is die sleutel wat je in `videos.items` gebruikt.
+  Geef je twee video's dezelfde beschrijving ("Fatou"), dan worden dat `Fatou.mp4` en `Fatou-2.mp4`: één gesprek met twee clips.
 - **Hernoemen mag.** De sync herkent een bestand aan zijn inhoud, niet aan zijn naam: hernoem `VID-20260918-WA0010.mp4` naar
   `Fatou.mp4` en de volgende sync neemt die naam over (niets wordt opnieuw gedownload; de build hernoemt de gemaakte video mee
   in plaats van opnieuw te encoderen). Jouw naam wint vanaf dan; alleen een bestand dat nog de naam van de sync draagt volgt

@@ -63,7 +63,7 @@ export function createMessenger({ site, cfg, contacts, emoticons, avatarFor, ide
   const roomMsgs = (r) => (r === 'group' ? seeds : []).concat(all.filter(m => (m.room || 'group') === r));
   const contactOf = (r) => contacts.find(c => c.key === r);
   const canPost = (r) => !!user && (r === 'group' || isElisa(user) || contactFor(user)?.key === r);
-  const clipCount = (c) => (c.audio ? 1 : 0) + (c.video ? 1 : 0) + (c.text ? 1 : 0);
+  const clipCount = (c) => c.audios.length + c.videos.length + (c.text ? 1 : 0);
   function roomUnread(r) {
     const seen = lastRead()[r];
     const mine = (m) => user && displayNameFor(m.name) === displayNameFor(user);
@@ -153,7 +153,7 @@ export function createMessenger({ site, cfg, contacts, emoticons, avatarFor, ide
       h('span', { class: 'st online grp' }), h('div', { class: 'dn' }, h('b', null, cfg.groupName), h('small', null, `${cfg.groupPm} · ${roomMsgs('group').length} berichten`)), h('span', { class: 'badge' }));
     const rows = contacts.map(c => h('div', { class: 'conv', dataset: { room: c.key }, onclick: () => select(c.key) },
       h('span', { class: `st ${c.status}` }),
-      h('div', { class: 'dn' }, h('b', null, c.display || c.name), h('small', null, [c.audio ? '🎤 ' : '', c.video ? '🎥 ' : '', c.pm || ''].join(''))),
+      h('div', { class: 'dn' }, h('b', null, c.display || c.name), h('small', null, [icon('🎤', c.audios.length), icon('🎥', c.videos.length), c.pm || ''].join(''))),
       h('span', { class: 'badge' })));
     clear(convList).append(h('div', { class: 'grp' }, `Gesprekken (${contacts.length + 1})`), groupRow, ...rows,
       h('div', { class: 'grp' }, 'Offline (0)'), h('div', { class: 'empty-grp' }, 'Niemand. Iedereen is online voor Elisa.'));
@@ -184,8 +184,9 @@ export function createMessenger({ site, cfg, contacts, emoticons, avatarFor, ide
     else {
       logEl.append(h('div', { class: 'sys' }, `${c.name} is nu ${STATUS_LABEL[c.status] || 'Online'}.`));
       logEl.append(h('div', { class: 'sys' }, 'Accepteer nooit bestanden van vreemden. Deze persoon ken je.'));
-      if (c.audio) logEl.append(msgBlock(c, [h('div', { class: 'line sys' }, `${c.name} heeft een spraakclip verzonden (${fmtDuration(c.audio.duration)})`), clipPlayer(c).el]));
-      if (c.video) logEl.append(msgBlock(c, [h('div', { class: 'line sys' }, `${c.name} heeft een videoclip verzonden (${fmtDuration(c.video.duration)})`), videoClip(c)]));
+      // every clip is its own message, voice clips first, in file order ("Fatou.mp4", "Fatou 2.mp4", ...)
+      c.audios.forEach((a, i) => logEl.append(msgBlock(c, [h('div', { class: 'line sys' }, `${c.name} heeft ${i ? 'nog ' : ''}een spraakclip verzonden (${fmtDuration(a.duration)})`), clipPlayer(c, a).el])));
+      c.videos.forEach((v, i) => logEl.append(msgBlock(c, [h('div', { class: 'line sys' }, `${c.name} heeft ${i ? 'nog ' : ''}een videoclip verzonden (${fmtDuration(v.duration)})`), videoClip(c, v)])));
       if (c.text) logEl.append(msgBlock(c, [h('div', { class: 'line' }, todo(c.text))]));
     }
     msgsEl = h('div', { class: 'msgs' });
@@ -283,9 +284,9 @@ export function createMessenger({ site, cfg, contacts, emoticons, avatarFor, ide
 }
 
 // ---- clips ------------------------------------------------------------------------------------------
-function clipPlayer(c) {
-  const a = c.audio;
-  const bars = Array.from({ length: 28 }, (_, i) => h('i', { style: { height: (25 + 60 * Math.abs(Math.sin(i * 1.7 + c.key.length))) + '%' } }));
+const icon = (ic, n) => n ? `${ic}${n > 1 ? n : ''} ` : '';
+function clipPlayer(c, a) {
+  const bars = Array.from({ length: 28 }, (_, i) => h('i', { style: { height: (25 + 60 * Math.abs(Math.sin(i * 1.7 + c.key.length + a.src.length))) + '%' } }));
   const btn = h('button', { class: 'pl', title: 'Afspelen' }, '▶');
   const tm = h('span', { class: 'tm' }, fmtDuration(a.duration));
   const el = h('div', { class: 'clip' }, btn, h('div', { class: 'wave' }, bars), tm);
@@ -297,8 +298,7 @@ function clipPlayer(c) {
   const off = player.onChange((src, playing) => { if (!el.isConnected) return off(); btn.textContent = src === a.src && playing ? '❚❚' : '▶'; });
   return { el, play };
 }
-function videoClip(c) {
-  const v = c.video;
+function videoClip(c, v) {
   const video = h('video', { controls: true, playsinline: true, preload: 'metadata', poster: v.poster, src: v.src });
   video.addEventListener('play', () => { player.stop(); document.querySelectorAll('video').forEach(o => { if (o !== video) o.pause(); }); });
   video.addEventListener('ended', () => player.resume());
